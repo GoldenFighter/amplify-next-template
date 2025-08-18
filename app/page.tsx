@@ -28,6 +28,7 @@ export default function App() {
   function createTodo() {
     client.models.Todo.create({
       content: window.prompt("Todo content"),
+      owner: window.prompt("owner"),
     });
   }
 
@@ -43,6 +44,8 @@ export default function App() {
         {todos.map((todo) => (
           <li onClick={() => deleteTodo(todo.id)}key={todo.id}>
             {todo.content}
+            {todo.owner}
+            {todo.isDone}
           </li>
         ))}
       </ul>
