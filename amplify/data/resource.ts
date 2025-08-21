@@ -16,9 +16,7 @@ const schema = a.schema({
     .authorization((allow) => [allow.owner()]),
 
   ScoredResponse: a.customType({
-    rating: a.integer()
-      .validate(v => v.gte(0, 'Min 0').lte(100, 'Max 100'))
-      .required(),
+    rating: a.integer().required(),
     summary: a.string().required(),
     reasoning: a.string().required(),
     risks: a.string().array().required(),
