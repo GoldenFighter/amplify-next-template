@@ -13,7 +13,7 @@ Amplify.configure(outputs);
 
 const client = generateClient<Schema>();
 
-const { signOut } = useAuthenticator();
+const { signOut, user } = useAuthenticator();
 
 export default function App() {
   const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
@@ -31,7 +31,6 @@ export default function App() {
   function createTodo() {
     client.models.Todo.create({
       content: window.prompt("Todo content"),
-      owner: window.prompt("owner"),
     });
   }
 
@@ -41,7 +40,7 @@ export default function App() {
 
   return (
     <main>
-      <h1>My todos</h1>
+      <h1>{user?.signInDetails?.loginId}'s todos</h1>
       <button onClick={createTodo}>+ new</button>
       <ul>
         {todos.map((todo) => (
