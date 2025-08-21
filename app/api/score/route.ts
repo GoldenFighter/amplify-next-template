@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { serverClient } from '@/src/lib/amplifyServerClient';
+import { serverClient } from '@/lib/amplifyServerClient';
 
 export async function POST(req: NextRequest) {
   const { prompt, context } = await req.json();
