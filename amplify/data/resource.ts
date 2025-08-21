@@ -26,7 +26,7 @@ const schema = a.schema({
   // 1) AI Generation route (request -> strictly-typed response)
   scoreTask: a.generation({
     aiModel: a.ai.model('Claude 3 Haiku'), // fast & cost-effective
-    systemPrompt: `You are a task analyst. Always analyze the given task and return a JSON objectmatching the ScoredResponse type. Never include extra prose. The "rating"must be an integer from 0 to 100 indicating overall quality/fit.`,
+    systemPrompt: `You are a task analyst. Always analyze the given task and return a JSON objectmatching the ScoredResponse type. Never include extra prose. The rating must be an integer from 0 to 100 indicating overall quality/fit.`,
     inferenceConfiguration: { temperature: 0.2, topP: 0.2, maxTokens: 1200 },
   })
     .arguments({
