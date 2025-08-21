@@ -27,7 +27,7 @@ const schema = a.schema({
 
   // 1) AI Generation route (request -> strictly-typed response)
   scoreTask: a.generation({
-    aiModel: a.ai.model('Claude 3.5 Haiku'), // fast & cost-effective
+    aiModel: a.ai.model('Claude 3 Haiku'), // fast & cost-effective
     systemPrompt: `
 You are a task analyst. Always analyze the given task and return a JSON object
 matching the ScoredResponse type. Never include extra prose. The "rating"
