@@ -13,18 +13,19 @@ const schema = a.schema({
         isDone: a.boolean(),
         owner: a.string(),
     })
-    .authorization((allow) => [allow.publicApiKey()]),
+    .authorization((allow) => [allow.owner()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
 
 export const data = defineData({
   schema,
-  authorizationModes: {
-    defaultAuthorizationMode: "apiKey",
-    apiKeyAuthorizationMode: {
-      expiresInDays: 30,
-    },
+    defaultAuthorizationMode: 'userPool',
+    default
+    // defaultAuthorizationMode: "apiKey",
+    // apiKeyAuthorizationMode: {
+    //   expiresInDays: 30,
+    // },
   },
 });
 
