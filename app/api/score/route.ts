@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
   const { prompt, context } = await req.json();
 
   // 1) Call the typed AI "generation" route
-  const { data: scored, errors } = await serverClient.queries.scoreTask({
+  const { data: scored, errors } = await serverClient.generations.scoreTask({
     prompt, context,
   });
   if (errors?.length) {
@@ -14,10 +14,9 @@ export async function POST(req: NextRequest) {
 
   // 2) Persist to your per-owner model (server-side only)
   const { data: saved, errors: saveErr } =
-    await serverClient.models.Analysis.create(
-      { prompt, context, result: scored! },
-      { authMode: 'userPool' } // ensures owner is attached
-    );
+    await serverClient.models.Analysis.create({
+      prompt, context, result: scored!
+    });
 
   if (saveErr?.length) {
     return NextResponse.json({ error: saveErr }, { status: 500 });
@@ -29,3 +28,4 @@ export async function POST(req: NextRequest) {
     result: saved?.result,   // { rating, summary, reasoning, risks[], recommendations[] }
   });
 }
+
