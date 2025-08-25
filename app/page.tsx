@@ -1,28 +1,25 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { generateClient } from "aws-amplify/data";
-import type { Schema } from "@/amplify/data/resource";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 import "./../app/app.css";
 import { Amplify } from "aws-amplify";
 import outputs from "@/amplify_outputs.json";
 import "@aws-amplify/ui-react/styles.css";
+import { client, useAIGeneration } from "@/lib/client";
 
 Amplify.configure(outputs);
-
-const client = generateClient<Schema>();
 
 export default function App() {
   // ---- Auth ----
   const { signOut, user } = useAuthenticator();
 
   // ---- Todos (unchanged) ----
-  const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
+  const [todos, setTodos] = useState<Array<any>>([]);
 
   useEffect(() => {
     const sub = client.models.Todo.observeQuery().subscribe({
-      next: (data) => setTodos([...data.items]),
+      next: (data: any) => setTodos([...data.items]),
     });
     return () => sub.unsubscribe();
   }, []);
@@ -36,25 +33,24 @@ export default function App() {
     client.models.Todo.delete({ id });
   }
 
-  // ---- AI Scoring additions ----
-  type Analysis = Schema["Analysis"]["type"];
+  // ---- AI Scoring using Gen2 hooks ----
+  type Analysis = any;
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
-  const [loadingScore, setLoadingScore] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [active, setActive] = useState<Analysis | null>(null);
   const loginId = user?.signInDetails?.loginId ?? "User";
 
+  // Use the official Gen2 AI generation hook
+  const [{ data: scored, isLoading: loadingScore }, generateScore] = useAIGeneration("scoreTask");
+
   // Live query of recent analyses, newest first
   useEffect(() => {
-    // If your schema has an index on createdAt desc, you can swap to .list with sort options.
     const sub = client.models.Analysis
-      .observeQuery({
-        // @ts-ignore Amplify will infer this from schema; filter/sort optional
-      })
+      .observeQuery()
       .subscribe({
-        next: (data) => {
+        next: (data: any) => {
           // sort newest first for display consistency
-          const items = [...data.items].sort((a, b) =>
+          const items = [...data.items].sort((a: any, b: any) =>
             (b.createdAt || "").localeCompare(a.createdAt || "")
           );
           setAnalyses(items);
@@ -63,33 +59,41 @@ export default function App() {
     return () => sub.unsubscribe();
   }, []);
 
-  // Trigger server-side scoring (no client-side writes)
+  // Trigger AI scoring using Gen2 hooks
   async function handleScore() {
     const prompt = window.prompt("Describe the task to analyze:");
     if (!prompt) return;
-    setLoadingScore(true);
+    
     try {
-      const r = await fetch("/api/score", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ prompt }),
+      // Use the Gen2 generation hook
+      generateScore({ 
+        prompt, 
+        context: "Task analysis request" 
       });
-      const json = await r.json();
-      if (!r.ok) {
-        console.error(json);
-        alert("Scoring failed. Check logs.");
-        return;
-      }
-      // The server route saves the record; our observeQuery will auto-refresh.
-      // Optionally open the modal immediately:
-      // setActive({ id: json.id, ... }); // if your route returns full record
     } catch (e) {
       console.error(e);
-      alert("Network error triggering score.");
-    } finally {
-      setLoadingScore(false);
+      alert("Error triggering score.");
     }
   }
+
+  // Save the scored result when it's available
+  useEffect(() => {
+    if (scored) {
+      // Save the result to the Analysis model
+      client.models.Analysis.create({
+        prompt: "Task analysis request", // You might want to store the actual prompt
+        context: "Task analysis request",
+        result: scored
+      }).then(({ data: saved, errors: saveErr }) => {
+        if (saveErr?.length) {
+          console.error(saveErr);
+          alert("Failed to save analysis result.");
+        } else {
+          console.log("Analysis saved successfully:", saved);
+        }
+      });
+    }
+  }, [scored]);
 
   // Simple modal UI
   function openModal(item: Analysis) {
@@ -113,7 +117,7 @@ export default function App() {
         <button onClick={createTodo}>+ new</button>
       </div>
       <ul>
-        {todos.map((todo) => (
+        {todos.map((todo: any) => (
           <li
             key={todo.id}
             onClick={() => deleteTodo(todo.id)}
@@ -146,7 +150,7 @@ export default function App() {
         <h3 style={{ marginTop: 16 }}>Recent scores</h3>
         {!analyses.length && <div>No scores yet.</div>}
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-          {analyses.map((a) => (
+          {analyses.map((a: any) => (
             <li
               key={a.id}
               onClick={() => openModal(a)}
@@ -246,7 +250,7 @@ export default function App() {
                 <div style={{ margin: "8px 0" }}>
                   <b>Risks</b>
                   <ul>
-                    {active.result.risks.map((r, i) => (
+                    {active.result.risks.map((r: any, i: number) => (
                       <li key={i}>{r}</li>
                     ))}
                   </ul>
@@ -256,7 +260,7 @@ export default function App() {
                 <div style={{ margin: "8px 0" }}>
                   <b>Recommendations</b>
                   <ul>
-                    {active.result.recommendations.map((r, i) => (
+                    {active.result.recommendations.map((r: any, i: number) => (
                       <li key={i}>{r}</li>
                     ))}
                   </ul>
