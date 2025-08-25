@@ -3,12 +3,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 import "./../app/app.css";
-//import { Amplify } from "aws-amplify";
+import { Amplify } from "aws-amplify";
 import outputs from "@/amplify_outputs.json";
 import "@aws-amplify/ui-react/styles.css";
 import { client, useAIGeneration } from "@/lib/client";
 
-//Amplify.configure(outputs);
+Amplify.configure(outputs);
 
 export default function App() {
   // ---- Auth ----
