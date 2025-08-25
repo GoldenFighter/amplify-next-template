@@ -41,7 +41,7 @@ export default function App() {
   const loginId = user?.signInDetails?.loginId ?? "User";
 
   // Use the official Gen2 AI generation hook
-  const [{ data: scored, errors, isLoading: loadingScore }, generateScore] = useAIGeneration("scoreTask");
+  const [{ data: scored, isLoading: loadingScore /*, error*/ }, generateScore] = useAIGeneration("scoreTask");
 
 
   // Live query of recent analyses, newest first
@@ -61,15 +61,16 @@ export default function App() {
   }, []);
 
   // Trigger AI scoring using Gen2 hooks
-async function handleScore() {
-  const prompt = window.prompt("Describe the task to analyze:");
-  if (!prompt) return;
-  const { data, errors } = await generateScore({ prompt, context: "Task analysis request" });
-  if (errors?.length) {
-    console.error("AI gen errors:", errors);
-    alert(errors.map((e: any) => e.message ?? String(e)).join("\n"));
+  async function handleScore() {
+    const prompt = window.prompt("Describe the task to analyze:");
+    if (!prompt) return;
+    try {
+     await generateScore({ prompt, context: "Task analysis request" });
+    } catch (e) {
+      console.error(e);
+      alert("Error triggering score.");
+    }
   }
-}
 
   // Save the scored result when it's available
   useEffect(() => {
