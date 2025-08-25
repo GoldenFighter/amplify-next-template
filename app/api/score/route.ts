@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
   const { prompt, context } = await req.json();
 
   // 1) Call the typed AI "generation" route
-  const { data: scored, errors } = await serverClient.generations.scoreTask({
+  const { data: scored, errors } = await serverClient.scoreTask({
     prompt, context,
   });
   if (errors?.length) {
