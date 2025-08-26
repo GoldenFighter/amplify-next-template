@@ -53,6 +53,7 @@ const schema = a.schema({
       prompt: a.string().required(),
       context: a.string(),
       result: a.ref('ScoredResponse').required(),
+      ownerEmail: a.string().required(), // Store the user's email for display
     })
     .authorization(allow => [
       allow.owner(), // Owner can do everything

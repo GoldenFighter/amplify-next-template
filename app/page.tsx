@@ -44,6 +44,7 @@ export default function App() {
   const [modalOpen, setModalOpen] = useState(false);
   const [active, setActive] = useState<Analysis | null>(null);
   const [currentPrompt, setCurrentPrompt] = useState<string>("");
+  const [hasProcessedScore, setHasProcessedScore] = useState(false);
   
   // Extract email prefix (characters before @) for display
   const getDisplayName = (email: string) => {
@@ -63,8 +64,9 @@ export default function App() {
     console.log("scored data changed:", scored);
     if (scored) {
       console.log("scored data details:", JSON.stringify(scored, null, 2));
+      console.log("Current state - hasProcessedScore:", hasProcessedScore, "currentPrompt:", currentPrompt);
     }
-  }, [scored]);
+  }, [scored, hasProcessedScore, currentPrompt]);
 
 
   // Live query of recent analyses, newest first
@@ -90,6 +92,7 @@ export default function App() {
     
     // Store the current prompt for later use
     setCurrentPrompt(prompt);
+    setHasProcessedScore(false); // Reset the processed flag for new score
     
     console.log("Starting AI generation with prompt:", prompt);
     console.log("Current user:", user);
@@ -147,22 +150,28 @@ export default function App() {
 
   // Save the scored result when it's available
   useEffect(() => {
-    if (scored) {
+    if (scored && !hasProcessedScore && currentPrompt) {
+      console.log("Saving new analysis with prompt:", currentPrompt);
+      
       // Save the result to the Analysis model
       client.models.Analysis.create({
-        prompt: currentPrompt || "Task analysis request", // Use the stored prompt
+        prompt: currentPrompt,
         context: "Task analysis request",
         result: scored,
+        ownerEmail: loginId, // Store the user's email for display
       }).then(({ data: saved, errors: saveErr }) => {
         if (saveErr?.length) {
           console.error(saveErr);
           alert("Failed to save analysis result.");
         } else {
           console.log("Analysis saved successfully:", saved);
+          // Clear the prompt and mark as processed to prevent duplicate saves
+          setCurrentPrompt("");
+          setHasProcessedScore(true);
         }
       });
     }
-  }, [scored, currentPrompt]);
+  }, [scored, hasProcessedScore, currentPrompt, loginId]);
 
 
 
@@ -241,7 +250,7 @@ export default function App() {
                 <span style={{ opacity: 0.7 }}>{fmt(a.createdAt)}</span>
               </div>
               <div style={{ marginTop: 4, opacity: 0.9 }}>
-                <b>Submitted by:</b> {a.owner ? getDisplayName(a.owner) : "unknown"}
+                <b>Submitted by:</b> {a.ownerEmail ? getDisplayName(a.ownerEmail) : "unknown"}
               </div>
               <div style={{ marginTop: 6 }}>
                 <b>Summary:</b> {a.result.summary}
@@ -338,7 +347,7 @@ export default function App() {
                 </div>
               )}
               <div style={{ marginTop: 8, opacity: 0.7 }}>
-                <small>Submitted by: {active.owner ? getDisplayName(active.owner) : "unknown"}</small>
+                <small>Submitted by: {active.ownerEmail ? getDisplayName(active.ownerEmail) : "unknown"}</small>
                 <br />
                 <small>Created: {fmt(active.createdAt)}</small>
               </div>
