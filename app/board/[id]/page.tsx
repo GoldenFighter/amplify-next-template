@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthenticator } from "@aws-amplify/ui-react";
-import { client, useAIGeneration } from "@/lib/client";
-import { getDisplayName, canSubmitToBoard } from "@/lib/utils";
+import { client, useAIGeneration } from "../../../lib/client";
+import { getDisplayName, canSubmitToBoard } from "../../../lib/utils";
 import { Amplify } from "aws-amplify";
-import outputs from "@/amplify_outputs.json";
+import outputs from "../../../amplify_outputs.json";
 
 // Configure Amplify if not already configured
 if (!Amplify.getConfig().Auth) {
@@ -20,8 +20,8 @@ interface Board {
   isPublic: boolean | null;
   maxSubmissionsPerUser: number | null;
   createdBy: string;
-  allowedUsers: string[] | null;
-  allowedEmails: string[] | null;
+  allowedUsers: (string | null)[] | null;
+  allowedEmails: (string | null)[] | null;
   createdAt: string;
   updatedAt: string;
 }

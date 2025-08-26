@@ -27,7 +27,7 @@ export const canAccessBoard = (
   if (board.createdBy === userEmail) return true;
   
   // Check if user's email is in allowed emails
-  if (board.allowedEmails?.includes(userEmail)) return true;
+  if (board.allowedEmails?.some(email => email === userEmail)) return true;
   
   return false;
 };

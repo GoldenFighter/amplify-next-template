@@ -4,12 +4,12 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 import "./../app/app.css";
 import "@aws-amplify/ui-react/styles.css";
-import { client, useAIGeneration } from "@/lib/client";
+import { client, useAIGeneration } from "../lib/client";
 import { Amplify } from "aws-amplify";
-import outputs from "@/amplify_outputs.json";
+import outputs from "../amplify_outputs.json";
 import CreateBoard from "./components/CreateBoard";
 import BoardList from "./components/BoardList";
-import { isAdmin } from "@/lib/utils";
+import { isAdmin } from "../lib/utils";
 
 // Configure Amplify if not already configured
 if (!Amplify.getConfig().Auth) {

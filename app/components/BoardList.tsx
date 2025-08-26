@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { client } from "@/lib/client";
-import { getDisplayName } from "@/lib/utils";
+import { getDisplayName } from "../../lib/utils";
 
 interface Board {
   id: string;
@@ -12,8 +12,8 @@ interface Board {
   isPublic: boolean | null;
   maxSubmissionsPerUser: number | null;
   createdBy: string;
-  allowedUsers: string[] | null;
-  allowedEmails: string[] | null;
+  allowedUsers: (string | null)[] | null;
+  allowedEmails: (string | null)[] | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -45,7 +45,7 @@ export default function BoardList({ userEmail }: BoardListProps) {
           if (board.createdBy === userEmail) return true;
           
           // Check if user's email is in allowed emails
-          if (board.allowedEmails?.includes(userEmail)) return true;
+          if (board.allowedEmails?.some(email => email === userEmail)) return true;
           
           return false;
         });
