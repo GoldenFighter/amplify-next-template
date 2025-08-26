@@ -33,7 +33,7 @@ interface SubmissionsViewProps {
   maxScore?: number | null;
 }
 
-export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin }: SubmissionsViewProps) {
+export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin, contestType, maxScore }: SubmissionsViewProps) {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'mine' | 'others'>('all');
@@ -98,14 +98,16 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
     });
 
   const getRatingColor = (rating: number) => {
-    if (rating >= 80) return 'text-green-600';
-    if (rating >= 60) return 'text-yellow-600';
+    const max = maxScore || 100;
+    if (rating >= max * 0.8) return 'text-green-600';
+    if (rating >= max * 0.6) return 'text-yellow-600';
     return 'text-red-600';
   };
 
   const getRatingBadge = (rating: number) => {
-    if (rating >= 80) return 'bg-green-100 text-green-800';
-    if (rating >= 60) return 'bg-yellow-100 text-yellow-800';
+    const max = maxScore || 100;
+    if (rating >= max * 0.8) return 'bg-green-100 text-green-800';
+    if (rating >= max * 0.6) return 'bg-yellow-100 text-yellow-800';
     return 'bg-red-100 text-red-800';
   };
 
@@ -197,11 +199,11 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
                     )}
                   </div>
                   
-                  {/* Prompt */}
-                  <div className="mb-3">
-                    <strong className="text-sm text-gray-700">Task:</strong>
-                    <p className="text-sm text-gray-600 mt-1">{submission.prompt}</p>
-                  </div>
+                                     {/* Prompt */}
+                   <div className="mb-3">
+                     <strong className="text-sm text-gray-700">{contestType ? 'Entry' : 'Task'}:</strong>
+                     <p className="text-sm text-gray-600 mt-1">{submission.prompt}</p>
+                   </div>
                   
                   {/* Summary */}
                   <div className="mb-3">
