@@ -3,12 +3,17 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 import "./../app/app.css";
-import { Amplify } from "aws-amplify";
-import outputs from "@/amplify_outputs.json";
 import "@aws-amplify/ui-react/styles.css";
 import { client, useAIGeneration } from "@/lib/client";
+import { Amplify } from "aws-amplify";
+import outputs from "@/amplify_outputs.json";
 
-Amplify.configure(outputs);
+// Configure Amplify if not already configured
+if (!Amplify.getConfig().Auth) {
+  console.log("Configuring Amplify in page component...");
+  Amplify.configure(outputs);
+  console.log("Amplify configured successfully in page component");
+}
 
 export default function App() {
   // ---- Auth ----
@@ -41,7 +46,17 @@ export default function App() {
   const loginId = user?.signInDetails?.loginId ?? "User";
 
   // Use the official Gen2 AI generation hook
-  const [{ data: scored, isLoading: loadingScore /*, error*/ }, generateScore] = useAIGeneration("scoreTask");
+  const [{ data: scored, isLoading: loadingScore }, generateScore] = useAIGeneration("scoreTask");
+
+  console.log("AI Generation hook state:", { scored, loadingScore, generateScore });
+
+  // Debug: Monitor when scored data changes
+  useEffect(() => {
+    console.log("scored data changed:", scored);
+    if (scored) {
+      console.log("scored data details:", JSON.stringify(scored, null, 2));
+    }
+  }, [scored]);
 
 
   // Live query of recent analyses, newest first
@@ -64,11 +79,58 @@ export default function App() {
   async function handleScore() {
     const prompt = window.prompt("Describe the task to analyze:");
     if (!prompt) return;
+    
+    console.log("Starting AI generation with prompt:", prompt);
+    console.log("Current user:", user);
+    console.log("generateScore function:", generateScore);
+    
     try {
-     await generateScore({ prompt, context: "Task analysis request" });
-    } catch (e) {
-      console.error(e);
-      alert("Error triggering score.");
+      console.log("Calling generateScore...");
+      console.log("Input parameters:", { prompt, context: "Task analysis request" });
+      
+      // Try the hook first
+      const result = await generateScore({ prompt, context: "Task analysis request" });
+      console.log("generateScore result:", result);
+      
+      if (result === undefined) {
+        console.warn("generateScore returned undefined - trying direct client approach...");
+        
+        // Try using the client directly to see if we get better error information
+        try {
+          console.log("Trying direct client.generations.scoreTask...");
+          const directResult = await client.generations.scoreTask({
+            prompt,
+            context: "Task analysis request"
+          });
+          console.log("Direct client result:", directResult);
+          
+                     if (directResult.data) {
+             console.log("Direct client succeeded with data:", directResult.data);
+           } else if (directResult.errors) {
+             console.error("Direct client errors:", directResult.errors);
+             console.error("Error details:", JSON.stringify(directResult.errors, null, 2));
+             
+             // Show the first error message
+             const firstError = directResult.errors[0];
+             console.error("First error:", firstError);
+             
+             alert(`AI generation failed: ${firstError?.message || JSON.stringify(directResult.errors)}`);
+           }
+        } catch (directError: any) {
+          console.error("Direct client error:", directError);
+          alert(`Direct client error: ${directError?.message || 'Unknown error'}`);
+        }
+      }
+      
+    } catch (e: any) {
+      console.error("Error in handleScore:", e);
+      console.error("Error details:", {
+        name: e?.name,
+        message: e?.message,
+        stack: e?.stack,
+        cause: e?.cause
+      });
+      alert(`Error triggering score: ${e?.message || 'Unknown error'}`);
     }
   }
 
@@ -90,6 +152,8 @@ export default function App() {
       });
     }
   }, [scored]);
+
+
 
   // Simple modal UI
   function openModal(item: Analysis) {
