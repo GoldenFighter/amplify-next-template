@@ -2,6 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { client } from "../../lib/client";
+import {
+  TextField,
+  TextAreaField,
+  SelectField,
+  Button,
+  Card,
+  Flex,
+  Heading,
+  SwitchField,
+} from '@aws-amplify/ui-react';
+import '@aws-amplify/ui-react/styles.css';
 
 interface Board {
   id: string;
@@ -116,86 +127,69 @@ export default function BoardEdit({ board, onBoardUpdated, isAdmin, userEmail }:
 
   return (
     <>
-      <button
+      <Button
         onClick={() => setIsOpen(true)}
-        className="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700"
+        variation="primary"
+        size="small"
+        style={{ backgroundColor: "#d97706" }}
       >
         Edit
-      </button>
+      </Button>
 
       {isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">Edit Board: {board.name}</h2>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Board Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded"
-                  placeholder="Enter board name"
-                />
-              </div>
+          <Card className="max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <Flex direction="column" gap="1rem">
+              <Heading level={2}>Edit Board: {board.name}</Heading>
+              
+              <form onSubmit={handleSubmit}>
+                <Flex direction="column" gap="1rem">
+              <TextField
+                label="Board Name *"
+                placeholder="Enter board name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded"
-                  placeholder="Enter board description"
-                  rows={3}
-                />
-              </div>
+              <TextAreaField
+                label="Description"
+                placeholder="Enter board description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={3}
+              />
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Contest Type</label>
-                <input
-                  type="text"
-                  value={formData.contestType}
-                  onChange={(e) => setFormData({ ...formData, contestType: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded"
-                  placeholder="e.g., Boy Names, Recipes, Designs"
-                />
-              </div>
+              <TextField
+                label="Contest Type"
+                placeholder="e.g., Boy Names, Recipes, Designs"
+                value={formData.contestType}
+                onChange={(e) => setFormData({ ...formData, contestType: e.target.value })}
+              />
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Contest Prompt/Question</label>
-                <textarea
-                  value={formData.contestPrompt}
-                  onChange={(e) => setFormData({ ...formData, contestPrompt: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded"
-                  placeholder="What should users submit? e.g., 'Submit your favorite boy names'"
-                  rows={3}
-                />
-              </div>
+              <TextAreaField
+                label="Contest Prompt/Question"
+                placeholder="What should users submit? e.g., 'Submit your favorite boy names'"
+                value={formData.contestPrompt}
+                onChange={(e) => setFormData({ ...formData, contestPrompt: e.target.value })}
+                rows={3}
+              />
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Judging Criteria (comma-separated)</label>
-                <input
-                  type="text"
-                  value={formData.judgingCriteria}
-                  onChange={(e) => setFormData({ ...formData, judgingCriteria: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded"
-                  placeholder="e.g., Creativity, Uniqueness, Popularity, Meaning"
-                />
-              </div>
+              <TextField
+                label="Judging Criteria (comma-separated)"
+                placeholder="e.g., Creativity, Uniqueness, Popularity, Meaning"
+                value={formData.judgingCriteria}
+                onChange={(e) => setFormData({ ...formData, judgingCriteria: e.target.value })}
+              />
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Maximum Score</label>
-                <input
-                  type="number"
-                  min="10"
-                  max="1000"
-                  value={formData.maxScore}
-                  onChange={(e) => setFormData({ ...formData, maxScore: parseInt(e.target.value) })}
-                  className="w-full p-2 border border-gray-300 rounded"
-                />
-              </div>
+              <TextField
+                type="number"
+                label="Maximum Score"
+                min={10}
+                max={1000}
+                value={formData.maxScore.toString()}
+                onChange={(e) => setFormData({ ...formData, maxScore: parseInt(e.target.value) })}
+              />
 
               <div className="flex items-center">
                 <input
