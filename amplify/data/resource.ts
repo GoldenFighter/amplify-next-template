@@ -17,7 +17,37 @@ const schema = a.schema({
     recommendations: a.string().array().required(),
   }),
 
-    
+  // Board model for organizing different evaluation categories
+  Board: a
+    .model({
+      name: a.string().required(),
+      description: a.string(),
+      isPublic: a.boolean().default(false), // Whether board is visible to all users
+      maxSubmissionsPerUser: a.integer().default(2), // Max submissions per user
+      createdBy: a.string().required(), // Admin who created the board
+      allowedUsers: a.string().array(), // Specific users who can access (if not public)
+      allowedEmails: a.string().array(), // Specific emails who can access (if not public)
+    })
+    .authorization(allow => [
+      allow.owner(), // Creator can do everything
+      allow.authenticated().to(['read']), // All authenticated users can read boards
+    ]),
+
+  // Submission model for user entries to specific boards
+  Submission: a
+    .model({
+      boardId: a.string().required(), // Reference to the board
+      prompt: a.string().required(), // User's submission
+      context: a.string(),
+      result: a.ref('ScoredResponse').required(), // AI evaluation result
+      ownerEmail: a.string().required(), // User who submitted
+      boardName: a.string().required(), // Denormalized for easier queries
+    })
+    .authorization(allow => [
+      allow.owner(), // Submitter can do everything
+      allow.authenticated().to(['read']), // All authenticated users can read submissions
+    ]),
+
   generateRecipe: a.generation({
     aiModel: a.ai.model('Claude 3 Haiku'),
     systemPrompt: 'You are a helpful assistant that generates recipes. Return a JSON object with: name (string), ingredients (array of strings), instructions (string). Return only valid JSON.',
@@ -47,7 +77,7 @@ const schema = a.schema({
     .returns(a.ref('ScoredResponse'))
     .authorization(allow => allow.authenticated()),
 
-  // Data model for storing results - public read, owner write
+  // Legacy Analysis model - keeping for backward compatibility
   Analysis: a
     .model({
       prompt: a.string().required(),
@@ -57,7 +87,7 @@ const schema = a.schema({
     })
     .authorization(allow => [
       allow.owner(), // Owner can do everything
-      allow.authenticated().to(['read']), // Authenticated users can read all analyses
+      allow.authenticated().to(['read']), // All authenticated users can read all analyses
     ]),
 });
 

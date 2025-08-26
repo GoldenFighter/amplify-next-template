@@ -7,6 +7,9 @@ import "@aws-amplify/ui-react/styles.css";
 import { client, useAIGeneration } from "@/lib/client";
 import { Amplify } from "aws-amplify";
 import outputs from "@/amplify_outputs.json";
+import CreateBoard from "./components/CreateBoard";
+import BoardList from "./components/BoardList";
+import { isAdmin } from "@/lib/utils";
 
 // Configure Amplify if not already configured
 if (!Amplify.getConfig().Auth) {
@@ -38,7 +41,7 @@ export default function App() {
     client.models.Todo.delete({ id });
   }
 
-  // ---- AI Scoring using Gen2 hooks ----
+  // ---- AI Scoring using Gen2 hooks (Legacy) ----
   type Analysis = any;
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -79,7 +82,6 @@ export default function App() {
     }
   }, [manualScoredData, hasProcessedScore, currentPrompt]);
 
-
   // Live query of recent analyses, newest first
   useEffect(() => {
     const sub = client.models.Analysis
@@ -96,7 +98,7 @@ export default function App() {
     return () => sub.unsubscribe();
   }, []);
 
-    // Trigger AI scoring using Gen2 hooks
+  // Trigger AI scoring using Gen2 hooks (Legacy)
   async function handleScore() {
     const prompt = window.prompt("Describe the task to analyze:");
     if (!prompt) return;
@@ -162,7 +164,7 @@ export default function App() {
     }
   }
 
-  // Save the scored result when it's available
+  // Save the scored result when it's available (Legacy)
   useEffect(() => {
     // Check both hook data and manual data
     const dataToSave = scored || manualScoredData;
@@ -211,8 +213,6 @@ export default function App() {
     }
   }, [scored, manualScoredData, hasProcessedScore, currentPrompt, loginId]);
 
-
-
   // Simple modal UI
   function openModal(item: Analysis) {
     setActive(item);
@@ -228,166 +228,159 @@ export default function App() {
     iso ? new Date(iso).toLocaleString() : "";
 
   return (
-    <main style={{ maxWidth: 900, margin: "0 auto", padding: 16 }}>
-      {/* ---- Todos section (unchanged) ---- */}
-      <h1>{displayName}&apos;s todos</h1>
-      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-        <button onClick={createTodo}>+ new</button>
+    <main className="max-w-6xl mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Welcome, {displayName}!
+        </h1>
+        <p className="text-gray-600">
+          Choose a board to submit your tasks for AI analysis, or create a new board if you're an admin.
+        </p>
       </div>
-      <ul>
-        {todos.map((todo: any) => (
-          <li
-            key={todo.id}
-            onClick={() => deleteTodo(todo.id)}
-            style={{
-              cursor: "pointer",
-              padding: "6px 8px",
-              borderBottom: "1px solid #eee",
-              display: "grid",
-              gridTemplateColumns: "1fr auto auto",
-              gap: 8,
-              alignItems: "center",
-            }}
-            title="Click to delete"
-          >
-            <span>{todo.content}</span>
-            <small style={{ opacity: 0.6 }}>{todo.owner}</small>
-            <small style={{ opacity: 0.6 }}>{String(todo.isDone ?? false)}</small>
-          </li>
-        ))}
-      </ul>
 
-      <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid #ddd" }}>
-        {/* ---- AI Scoring controls ---- */}
-        <h2>AI Scoring</h2>
-        <button onClick={handleScore} disabled={loadingScore}>
-          {loadingScore ? "Scoring…" : "Score with AI"}
+      {/* Admin Controls */}
+      <div className="mb-8">
+        <CreateBoard 
+          onBoardCreated={() => window.location.reload()} 
+          isAdmin={isAdmin(loginId)} 
+        />
+      </div>
+
+      {/* Board List */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-6">Available Boards</h2>
+        <BoardList userEmail={loginId} />
+      </div>
+
+      {/* Legacy Section - Keeping for backward compatibility */}
+      <div className="mt-12 pt-8 border-t border-gray-200">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Legacy AI Scoring</h2>
+        <p className="text-gray-600 mb-4">
+          This is the old AI scoring system. Use the boards above for the new organized approach.
+        </p>
+        
+        <button 
+          onClick={handleScore} 
+          disabled={loadingScore}
+          className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 disabled:opacity-50"
+        >
+          {loadingScore ? "Scoring…" : "Legacy Score with AI"}
         </button>
 
-        {/* ---- Recent scores list ---- */}
-        <h3 style={{ marginTop: 16 }}>Recent scores</h3>
-        {!analyses.length && <div>No scores yet.</div>}
-        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-          {analyses.map((a: any) => (
-            <li
-              key={a.id}
-              onClick={() => openModal(a)}
-              style={{
-                border: "1px solid #eee",
-                borderRadius: 8,
-                padding: 12,
-                marginBottom: 8,
-                cursor: "pointer",
-              }}
-              title="Click to view details"
-            >
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <strong>
-                  Rating: {a.result.rating}/100
-                </strong>
-                <span style={{ opacity: 0.7 }}>{fmt(a.createdAt)}</span>
-              </div>
-              <div style={{ marginTop: 4, opacity: 0.9 }}>
-                <b>Submitted by:</b> {a.ownerEmail ? getDisplayName(a.ownerEmail) : "unknown"}
-              </div>
-              <div style={{ marginTop: 6 }}>
-                <b>Summary:</b> {a.result.summary}
-              </div>
-              <div style={{ marginTop: 4, opacity: 0.8 }}>
-                <b>Prompt:</b> {a.prompt}
-              </div>
-            </li>
-          ))}
-        </ul>
+        {/* Recent scores list */}
+        {analyses.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-3">Recent Legacy Scores</h3>
+            <ul className="space-y-3">
+              {analyses.map((a: any) => (
+                <li
+                  key={a.id}
+                  onClick={() => openModal(a)}
+                  className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <strong className="text-lg">
+                      Rating: {a.result.rating}/100
+                    </strong>
+                    <span className="text-sm text-gray-500">{fmt(a.createdAt)}</span>
+                  </div>
+                  <div className="text-sm text-gray-600 mb-2">
+                    <strong>Submitted by:</strong> {a.ownerEmail ? getDisplayName(a.ownerEmail) : "unknown"}
+                  </div>
+                  <div className="text-sm text-gray-600 mb-2">
+                    <strong>Summary:</strong> {a.result.summary}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <strong>Prompt:</strong> {a.prompt}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
-      {/* ---- Footer ---- */}
-      <div style={{ marginTop: 24 }}>
-        🥳 App successfully hosted. Try creating a new todo and running a score.
-        <br />
-        <a href="https://docs.amplify.aws/nextjs/start/quickstart/nextjs-app-router-client-components/">
-          Review next steps of this tutorial.
-        </a>
+      {/* Sign Out */}
+      <div className="mt-8 text-center">
+        <button
+          onClick={signOut}
+          className="text-gray-600 hover:text-gray-800"
+        >
+          Sign out
+        </button>
       </div>
-      <button onClick={signOut} style={{ marginTop: 12 }}>
-        Sign out
-      </button>
 
-      {/* ---- Modal ---- */}
+      {/* Modal */}
       {modalOpen && active && (
         <div
           onClick={closeModal}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.4)",
-            display: "grid",
-            placeItems: "center",
-            zIndex: 1000,
-          }}
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#fff",
-              padding: 16,
-              borderRadius: 10,
-              maxWidth: 720,
-              width: "95%",
-              boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
-            }}
+            className="bg-white p-6 rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
           >
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <h3 style={{ margin: 0 }}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold">
                 Rating: {active.result.rating}/100
               </h3>
-              <button onClick={closeModal}>Close</button>
+              <button 
+                onClick={closeModal}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
             </div>
-            <div style={{ marginTop: 8 }}>
-              <div style={{ margin: "8px 0" }}>
-                <b>Prompt</b>
-                <div>{active.prompt}</div>
+            
+            <div className="space-y-4">
+              <div>
+                <strong className="block text-sm font-medium text-gray-700 mb-1">Prompt</strong>
+                <div className="text-gray-900">{active.prompt}</div>
               </div>
+              
               {active.context && (
-                <div style={{ margin: "8px 0" }}>
-                  <b>Context</b>
-                  <div>{active.context}</div>
+                <div>
+                  <strong className="block text-sm font-medium text-gray-700 mb-1">Context</strong>
+                  <div className="text-gray-900">{active.context}</div>
                 </div>
               )}
-              <div style={{ margin: "8px 0" }}>
-                <b>Summary</b>
-                <div>{active.result.summary}</div>
+              
+              <div>
+                <strong className="block text-sm font-medium text-gray-700 mb-1">Summary</strong>
+                <div className="text-gray-900">{active.result.summary}</div>
               </div>
-              <div style={{ margin: "8px 0" }}>
-                <b>Reasoning</b>
-                <div style={{ whiteSpace: "pre-wrap" }}>
-                  {active.result.reasoning}
-                </div>
+              
+              <div>
+                <strong className="block text-sm font-medium text-gray-700 mb-1">Reasoning</strong>
+                <div className="text-gray-900 whitespace-pre-wrap">{active.result.reasoning}</div>
               </div>
+              
               {!!active.result.risks?.length && (
-                <div style={{ margin: "8px 0" }}>
-                  <b>Risks</b>
-                  <ul>
+                <div>
+                  <strong className="block text-sm font-medium text-gray-700 mb-1">Risks</strong>
+                  <ul className="list-disc list-inside text-gray-900">
                     {active.result.risks.map((r: any, i: number) => (
                       <li key={i}>{r}</li>
                     ))}
                   </ul>
                 </div>
               )}
+              
               {!!active.result.recommendations?.length && (
-                <div style={{ margin: "8px 0" }}>
-                  <b>Recommendations</b>
-                  <ul>
+                <div>
+                  <strong className="block text-sm font-medium text-gray-700 mb-1">Recommendations</strong>
+                  <ul className="list-disc list-inside text-gray-900">
                     {active.result.recommendations.map((r: any, i: number) => (
                       <li key={i}>{r}</li>
                     ))}
                   </ul>
                 </div>
               )}
-              <div style={{ marginTop: 8, opacity: 0.7 }}>
-                <small>Submitted by: {active.ownerEmail ? getDisplayName(active.ownerEmail) : "unknown"}</small>
-                <br />
-                <small>Created: {fmt(active.createdAt)}</small>
+              
+              <div className="pt-4 border-t border-gray-200 text-sm text-gray-500">
+                <div>Submitted by: {active.ownerEmail ? getDisplayName(active.ownerEmail) : "unknown"}</div>
+                <div>Created: {fmt(active.createdAt)}</div>
               </div>
             </div>
           </div>
