@@ -27,6 +27,10 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
     expiresAt: "",
     submissionFrequency: "unlimited" as "daily" | "weekly" | "monthly" | "unlimited",
     isActive: true,
+    contestPrompt: "",
+    contestType: "",
+    judgingCriteria: "",
+    maxScore: 100,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -46,6 +50,12 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
       // Parse expiration date
       const expiresAt = formData.expiresAt ? new Date(formData.expiresAt).toISOString() : null;
 
+      // Parse judging criteria from comma-separated string
+      const judgingCriteria = formData.judgingCriteria
+        .split(",")
+        .map(criteria => criteria.trim())
+        .filter(criteria => criteria.length > 0);
+
       await client.models.Board.create({
         name: formData.name,
         description: formData.description || null,
@@ -58,6 +68,10 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
         submissionFrequency: formData.submissionFrequency,
         lastEditedAt: new Date().toISOString(),
         lastEditedBy: userEmail,
+        contestPrompt: formData.contestPrompt || null,
+        contestType: formData.contestType || null,
+        judgingCriteria: judgingCriteria.length > 0 ? judgingCriteria : null,
+        maxScore: formData.maxScore,
       });
 
       // Reset form and close modal
@@ -70,6 +84,10 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
         expiresAt: "",
         submissionFrequency: "unlimited",
         isActive: true,
+        contestPrompt: "",
+        contestType: "",
+        judgingCriteria: "",
+        maxScore: 100,
       });
       setIsOpen(false);
       onBoardCreated();
@@ -116,6 +134,51 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
                   className="w-full p-2 border border-gray-300 rounded"
                   placeholder="Enter board description"
                   rows={3}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Contest Type</label>
+                <input
+                  type="text"
+                  value={formData.contestType}
+                  onChange={(e) => setFormData({ ...formData, contestType: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  placeholder="e.g., Boy Names, Recipes, Designs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Contest Prompt/Question</label>
+                <textarea
+                  value={formData.contestPrompt}
+                  onChange={(e) => setFormData({ ...formData, contestPrompt: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  placeholder="What should users submit? e.g., 'Submit your favorite boy names'"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Judging Criteria (comma-separated)</label>
+                <input
+                  type="text"
+                  value={formData.judgingCriteria}
+                  onChange={(e) => setFormData({ ...formData, judgingCriteria: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  placeholder="e.g., Creativity, Uniqueness, Popularity, Meaning"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Maximum Score</label>
+                <input
+                  type="number"
+                  min="10"
+                  max="1000"
+                  value={formData.maxScore}
+                  onChange={(e) => setFormData({ ...formData, maxScore: parseInt(e.target.value) })}
+                  className="w-full p-2 border border-gray-300 rounded"
                 />
               </div>
 

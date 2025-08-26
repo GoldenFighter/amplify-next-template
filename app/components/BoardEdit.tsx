@@ -16,6 +16,10 @@ interface Board {
   submissionFrequency: string | null;
   lastEditedAt: string | null;
   lastEditedBy: string | null;
+  contestPrompt: string | null;
+  contestType: string | null;
+  judgingCriteria: (string | null)[] | null;
+  maxScore: number | null;
 }
 
 interface BoardEditProps {
@@ -36,6 +40,10 @@ export default function BoardEdit({ board, onBoardUpdated, isAdmin, userEmail }:
     expiresAt: board.expiresAt ? new Date(board.expiresAt).toISOString().slice(0, 16) : "",
     submissionFrequency: (board.submissionFrequency as "daily" | "weekly" | "monthly" | "unlimited") || "unlimited",
     isActive: board.isActive !== false,
+    contestPrompt: board.contestPrompt || "",
+    contestType: board.contestType || "",
+    judgingCriteria: board.judgingCriteria?.join(", ") || "",
+    maxScore: board.maxScore || 100,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -49,6 +57,10 @@ export default function BoardEdit({ board, onBoardUpdated, isAdmin, userEmail }:
       expiresAt: board.expiresAt ? new Date(board.expiresAt).toISOString().slice(0, 16) : "",
       submissionFrequency: (board.submissionFrequency as "daily" | "weekly" | "monthly" | "unlimited") || "unlimited",
       isActive: board.isActive !== false,
+      contestPrompt: board.contestPrompt || "",
+      contestType: board.contestType || "",
+      judgingCriteria: board.judgingCriteria?.join(", ") || "",
+      maxScore: board.maxScore || 100,
     });
   }, [board]);
 
@@ -68,6 +80,12 @@ export default function BoardEdit({ board, onBoardUpdated, isAdmin, userEmail }:
       // Parse expiration date
       const expiresAt = formData.expiresAt ? new Date(formData.expiresAt).toISOString() : null;
 
+      // Parse judging criteria from comma-separated string
+      const judgingCriteria = formData.judgingCriteria
+        .split(",")
+        .map(criteria => criteria.trim())
+        .filter(criteria => criteria.length > 0);
+
       await client.models.Board.update({
         id: board.id,
         name: formData.name,
@@ -80,6 +98,10 @@ export default function BoardEdit({ board, onBoardUpdated, isAdmin, userEmail }:
         submissionFrequency: formData.submissionFrequency,
         lastEditedAt: new Date().toISOString(),
         lastEditedBy: userEmail,
+        contestPrompt: formData.contestPrompt || null,
+        contestType: formData.contestType || null,
+        judgingCriteria: judgingCriteria.length > 0 ? judgingCriteria : null,
+        maxScore: formData.maxScore,
       });
 
       setIsOpen(false);
@@ -127,6 +149,51 @@ export default function BoardEdit({ board, onBoardUpdated, isAdmin, userEmail }:
                   className="w-full p-2 border border-gray-300 rounded"
                   placeholder="Enter board description"
                   rows={3}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Contest Type</label>
+                <input
+                  type="text"
+                  value={formData.contestType}
+                  onChange={(e) => setFormData({ ...formData, contestType: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  placeholder="e.g., Boy Names, Recipes, Designs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Contest Prompt/Question</label>
+                <textarea
+                  value={formData.contestPrompt}
+                  onChange={(e) => setFormData({ ...formData, contestPrompt: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  placeholder="What should users submit? e.g., 'Submit your favorite boy names'"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Judging Criteria (comma-separated)</label>
+                <input
+                  type="text"
+                  value={formData.judgingCriteria}
+                  onChange={(e) => setFormData({ ...formData, judgingCriteria: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  placeholder="e.g., Creativity, Uniqueness, Popularity, Meaning"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Maximum Score</label>
+                <input
+                  type="number"
+                  min="10"
+                  max="1000"
+                  value={formData.maxScore}
+                  onChange={(e) => setFormData({ ...formData, maxScore: parseInt(e.target.value) })}
+                  className="w-full p-2 border border-gray-300 rounded"
                 />
               </div>
 

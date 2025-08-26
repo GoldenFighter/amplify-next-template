@@ -32,6 +32,10 @@ const schema = a.schema({
       submissionFrequency: a.enum(['daily', 'weekly', 'monthly', 'unlimited']), // Submission frequency limit
       lastEditedAt: a.datetime(), // Track when board was last edited
       lastEditedBy: a.string(), // Track who last edited the board
+      contestPrompt: a.string(), // The specific contest prompt/question for submissions
+      contestType: a.string(), // Type of contest (e.g., "boy names", "recipes", "designs")
+      judgingCriteria: a.string().array(), // Specific criteria for judging submissions
+      maxScore: a.integer().default(100), // Maximum possible score for this contest
     })
     .authorization(allow => [
       allow.owner(), // Creator can do everything
@@ -80,6 +84,22 @@ const schema = a.schema({
     .arguments({
       prompt: a.string().required(),
       context: a.string(), // optional extra info
+    })
+    .returns(a.ref('ScoredResponse'))
+    .authorization(allow => allow.authenticated()),
+
+  // Contest-specific AI generation for consistent judging
+  scoreContest: a.generation({
+    aiModel: a.ai.model('Claude 3 Haiku'),
+    systemPrompt: 'You are a contest judge. You will be given a contest type, prompt, judging criteria, and a submission. Rate the submission based on the criteria and return a JSON object with: rating (integer based on maxScore), summary (string), reasoning (string), risks (array of strings), recommendations (array of strings). Be strict and consistent in your judging. Return only valid JSON.',
+    inferenceConfiguration: { temperature: 0.1, topP: 0.1, maxTokens: 1000 },
+  })
+    .arguments({
+      submission: a.string().required(),
+      contestType: a.string().required(),
+      contestPrompt: a.string().required(),
+      judgingCriteria: a.string().array().required(),
+      maxScore: a.integer().required(),
     })
     .returns(a.ref('ScoredResponse'))
     .authorization(allow => allow.authenticated()),

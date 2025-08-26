@@ -29,6 +29,8 @@ interface SubmissionsViewProps {
   boardName: string;
   userEmail: string;
   isAdmin: boolean;
+  contestType?: string | null;
+  maxScore?: number | null;
 }
 
 export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin }: SubmissionsViewProps) {
@@ -114,7 +116,12 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-        <h2 className="text-xl font-semibold">Submissions ({filteredAndSortedSubmissions.length})</h2>
+        <div>
+          <h2 className="text-xl font-semibold">Submissions ({filteredAndSortedSubmissions.length})</h2>
+          {contestType && (
+            <p className="text-sm text-gray-600 mt-1">{contestType} Contest</p>
+          )}
+        </div>
         
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search */}
@@ -169,11 +176,11 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
                   {/* Header */}
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
                     <span className={`text-lg font-semibold ${getRatingColor(submission.result.rating)}`}>
-                      Rating: {submission.result.rating}/100
+                      Rating: {submission.result.rating}/{maxScore || 100}
                     </span>
                     <span className={`px-2 py-1 text-xs rounded-full ${getRatingBadge(submission.result.rating)}`}>
-                      {submission.result.rating >= 80 ? 'Excellent' : 
-                       submission.result.rating >= 60 ? 'Good' : 'Needs Improvement'}
+                      {submission.result.rating >= (maxScore || 100) * 0.8 ? 'Excellent' : 
+                       submission.result.rating >= (maxScore || 100) * 0.6 ? 'Good' : 'Needs Improvement'}
                     </span>
                     <span className="text-sm text-gray-500">
                       {new Date(submission.createdAt).toLocaleString()}

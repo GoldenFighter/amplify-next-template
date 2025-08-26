@@ -235,7 +235,10 @@ export default function App() {
           Welcome, {displayName}!
         </h1>
         <p className="text-gray-600">
-          Choose a board to submit your tasks for AI analysis, or create a new board if you're an admin.
+          Choose a contest board to submit your entries for AI judging, or create a new contest board if you're an admin.
+        </p>
+        <p className="text-sm text-gray-500 mt-2">
+          Contest boards allow you to create specific competitions (like "Best Boy Names", "Recipe Contest", etc.) with consistent judging criteria.
         </p>
       </div>
 

@@ -30,6 +30,10 @@ interface Board {
   submissionFrequency: string | null;
   lastEditedAt: string | null;
   lastEditedBy: string | null;
+  contestPrompt: string | null;
+  contestType: string | null;
+  judgingCriteria: (string | null)[] | null;
+  maxScore: number | null;
 }
 
 interface Submission {
@@ -231,7 +235,14 @@ export default function BoardPage() {
       return;
     }
 
-    const prompt = window.prompt("Describe the task to analyze:");
+    // Use contest-specific prompt if available, otherwise fall back to generic prompt
+    let prompt: string;
+    if (board.contestPrompt) {
+      prompt = window.prompt(`Contest Question: ${board.contestPrompt}\n\nYour submission:`) || "";
+    } else {
+      prompt = window.prompt("Describe the task to analyze:") || "";
+    }
+    
     if (!prompt) return;
     
     // Reset state for new score
@@ -240,19 +251,40 @@ export default function BoardPage() {
     setManualScoredData(null);
     
     try {
-      const result = await generateScore({ prompt, context: "Task analysis request" });
+      let result;
       
-      if (result === undefined) {
-        // Try direct client approach
-        const directResult = await client.generations.scoreTask({
-          prompt,
-          context: "Task analysis request"
+      // Use contest-specific scoring if available, otherwise fall back to generic scoring
+      if (board.contestType && board.contestPrompt && board.judgingCriteria && board.maxScore) {
+        // Use contest-specific scoring
+        result = await client.generations.scoreContest({
+          submission: prompt,
+          contestType: board.contestType,
+          contestPrompt: board.contestPrompt,
+          judgingCriteria: board.judgingCriteria.filter(c => c !== null) as string[],
+          maxScore: board.maxScore,
         });
         
-        if (directResult.data) {
-          setManualScoredData(directResult.data);
-        } else if (directResult.errors) {
-          alert(`AI generation failed: ${directResult.errors[0]?.message || 'Unknown error'}`);
+        if (result.data) {
+          setManualScoredData(result.data);
+        } else if (result.errors) {
+          alert(`AI generation failed: ${result.errors[0]?.message || 'Unknown error'}`);
+        }
+      } else {
+        // Fall back to generic scoring
+        result = await generateScore({ prompt, context: "Task analysis request" });
+        
+        if (result === undefined) {
+          // Try direct client approach
+          const directResult = await client.generations.scoreTask({
+            prompt,
+            context: "Task analysis request"
+          });
+          
+          if (directResult.data) {
+            setManualScoredData(directResult.data);
+          } else if (directResult.errors) {
+            alert(`AI generation failed: ${directResult.errors[0]?.message || 'Unknown error'}`);
+          }
         }
       }
     } catch (error: any) {
@@ -283,10 +315,34 @@ export default function BoardPage() {
         </button>
         
         <div className="flex items-start justify-between">
-          <div>
+          <div className="flex-1">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">{board.name}</h1>
+            {board.contestType && (
+              <p className="text-xl text-blue-600 font-semibold mb-2">{board.contestType}</p>
+            )}
+            {board.contestPrompt && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-3">
+                <p className="text-lg text-blue-800 font-medium mb-2">Contest Question:</p>
+                <p className="text-blue-700 text-lg">{board.contestPrompt}</p>
+              </div>
+            )}
             {board.description && (
               <p className="text-gray-600 text-lg">{board.description}</p>
+            )}
+            {board.judgingCriteria && board.judgingCriteria.length > 0 && (
+              <div className="mt-3">
+                <p className="text-sm text-gray-600 mb-2">Judging Criteria:</p>
+                <div className="flex flex-wrap gap-2">
+                  {board.judgingCriteria.map((criteria, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full"
+                    >
+                      {criteria}
+                    </span>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
           
@@ -326,11 +382,18 @@ export default function BoardPage() {
       {boardActive ? (
         <div className="bg-white border border-gray-200 rounded-lg p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Submit New Analysis</h2>
+            <h2 className="text-xl font-semibold">Submit New Entry</h2>
             <div className="text-sm text-gray-600">
               {submissionLimit.currentCount} / {submissionLimit.maxAllowed} submissions used
             </div>
           </div>
+          
+          {board.contestPrompt && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-gray-600 mb-2">What to submit:</p>
+              <p className="text-gray-800 font-medium">{board.contestPrompt}</p>
+            </div>
+          )}
           
           {submissionLimit.canSubmit ? (
             <button
@@ -338,7 +401,7 @@ export default function BoardPage() {
               disabled={loadingScore}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
-              {loadingScore ? "Generating..." : "Submit for AI Analysis"}
+              {loadingScore ? "Generating..." : "Submit Entry"}
             </button>
           ) : (
             <div className="text-center py-4">
@@ -371,6 +434,8 @@ export default function BoardPage() {
         boardName={board.name}
         userEmail={loginId}
         isAdmin={isAdmin(loginId)}
+        contestType={board.contestType}
+        maxScore={board.maxScore}
       />
 
       {/* Sign Out */}

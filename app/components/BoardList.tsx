@@ -23,6 +23,10 @@ interface Board {
   submissionFrequency: string | null;
   lastEditedAt: string | null;
   lastEditedBy: string | null;
+  contestPrompt: string | null;
+  contestType: string | null;
+  judgingCriteria: (string | null)[] | null;
+  maxScore: number | null;
 }
 
 interface BoardListProps {
@@ -128,7 +132,12 @@ export default function BoardList({ userEmail }: BoardListProps) {
             className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
           >
             <div className="flex items-start justify-between mb-3">
-              <h3 className="text-lg font-semibold text-gray-900">{board.name}</h3>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">{board.name}</h3>
+                {board.contestType && (
+                  <p className="text-sm text-blue-600 font-medium">{board.contestType}</p>
+                )}
+              </div>
               <div className="flex gap-2">
                 <span className={`px-2 py-1 text-xs rounded-full ${statusBadge.class}`}>
                   {statusBadge.text}
@@ -152,6 +161,13 @@ export default function BoardList({ userEmail }: BoardListProps) {
               </div>
             </div>
             
+            {board.contestPrompt && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-blue-800 font-medium mb-1">Contest Question:</p>
+                <p className="text-sm text-blue-700">{board.contestPrompt}</p>
+              </div>
+            )}
+            
             {board.description && (
               <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                 {board.description}
@@ -167,6 +183,12 @@ export default function BoardList({ userEmail }: BoardListProps) {
                 <span>Frequency:</span>
                 <span className="font-medium capitalize">{board.submissionFrequency || 'unlimited'}</span>
               </div>
+              {board.maxScore && (
+                <div className="flex justify-between">
+                  <span>Max score:</span>
+                  <span className="font-medium">{board.maxScore}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span>Created by:</span>
                 <span className="font-medium">{getDisplayName(board.createdBy)}</span>
@@ -194,6 +216,22 @@ export default function BoardList({ userEmail }: BoardListProps) {
                 </div>
               )}
             </div>
+
+            {board.judgingCriteria && board.judgingCriteria.length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs text-gray-500 mb-2">Judging Criteria:</p>
+                <div className="flex flex-wrap gap-1">
+                  {board.judgingCriteria.map((criteria, index) => (
+                    <span
+                      key={index}
+                      className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-full"
+                    >
+                      {criteria}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             
             <div className="pt-3 border-t border-gray-100">
               <button
