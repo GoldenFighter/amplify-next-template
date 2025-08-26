@@ -149,3 +149,34 @@ export const formatExpirationTime = (expiresAt: string | null): string | null =>
   const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
   return `${minutes}m left`;
 };
+
+// Calculate time until expiration with more details
+export const getExpirationInfo = (expiresAt: string | null) => {
+  if (!expiresAt) return null;
+  
+  const now = new Date();
+  const expiration = new Date(expiresAt);
+  const timeLeft = expiration.getTime() - now.getTime();
+  
+  if (timeLeft <= 0) return { expired: true, text: "Expired" };
+  
+  const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  
+  if (days > 0) return { expired: false, text: `${days}d ${hours}h left` };
+  if (hours > 0) return { expired: false, text: `${hours}h left` };
+  
+  const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+  return { expired: false, text: `${minutes}m left` };
+};
+
+// Get status badge for board
+export const getStatusBadge = (board: any) => {
+  if (!board.isActive) return { text: 'Inactive', class: 'warning' };
+  
+  const expirationInfo = getExpirationInfo(board.expiresAt);
+  if (expirationInfo?.expired) return { text: 'Expired', class: 'error' };
+  
+  if (board.isPublic) return { text: 'Public', class: 'success' };
+  return { text: 'Private', class: 'info' };
+};

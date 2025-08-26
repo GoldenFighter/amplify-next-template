@@ -1,11 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { client } from "../../lib/client";
 import { useRouter } from "next/navigation";
-import { client } from "@/lib/client";
-import { getDisplayName, isAdmin } from "../../lib/utils";
+import { isAdmin, getExpirationInfo, getStatusBadge, getDisplayName } from "../../lib/utils";
 import BoardEdit from "./BoardEdit";
 import BoardDelete from "./BoardDelete";
+import {
+  Card,
+  Flex,
+  Heading,
+  Text,
+  Badge,
+  Button,
+  Divider,
+  Alert,
+} from '@aws-amplify/ui-react';
+import '@aws-amplify/ui-react/styles.css';
 
 interface Board {
   id: string;
@@ -77,37 +88,6 @@ export default function BoardList({ userEmail }: BoardListProps) {
     router.push(`/board/${boardId}`);
   };
 
-  // Calculate time until expiration
-  const getExpirationInfo = (expiresAt: string | null) => {
-    if (!expiresAt) return null;
-    
-    const now = new Date();
-    const expiration = new Date(expiresAt);
-    const timeLeft = expiration.getTime() - now.getTime();
-    
-    if (timeLeft <= 0) return { expired: true, text: "Expired" };
-    
-    const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    
-    if (days > 0) return { expired: false, text: `${days}d ${hours}h left` };
-    if (hours > 0) return { expired: false, text: `${hours}h left` };
-    
-    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-    return { expired: false, text: `${minutes}m left` };
-  };
-
-  // Get status badge for board
-  const getStatusBadge = (board: Board) => {
-    if (!board.isActive) return { text: 'Inactive', class: 'bg-gray-100 text-gray-800' };
-    
-    const expirationInfo = getExpirationInfo(board.expiresAt);
-    if (expirationInfo?.expired) return { text: 'Expired', class: 'bg-red-100 text-red-800' };
-    
-    if (board.isPublic) return { text: 'Public', class: 'bg-green-100 text-green-800' };
-    return { text: 'Private', class: 'bg-blue-100 text-blue-800' };
-  };
-
   if (loading) {
     return <div className="text-center py-8">Loading boards...</div>;
   }
@@ -127,121 +107,124 @@ export default function BoardList({ userEmail }: BoardListProps) {
         const expirationInfo = getExpirationInfo(board.expiresAt);
         
         return (
-          <div
+          <Card
             key={board.id}
-            className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+            variation="outlined"
+            className="hover:shadow-md transition-shadow"
           >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">{board.name}</h3>
-                {board.contestType && (
-                  <p className="text-sm text-blue-600 font-medium">{board.contestType}</p>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <span className={`px-2 py-1 text-xs rounded-full ${statusBadge.class}`}>
-                  {statusBadge.text}
-                </span>
-                {userIsAdmin && board.createdBy === userEmail && (
-                  <div className="flex gap-1">
-                    <BoardEdit 
-                      board={board} 
-                      onBoardUpdated={fetchBoards} 
-                      isAdmin={userIsAdmin} 
-                      userEmail={userEmail} 
-                    />
-                    <BoardDelete 
-                      board={board} 
-                      onBoardDeleted={fetchBoards} 
-                      isAdmin={userIsAdmin} 
-                      userEmail={userEmail} 
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {board.contestPrompt && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                <p className="text-sm text-blue-800 font-medium mb-1">Contest Question:</p>
-                <p className="text-sm text-blue-700">{board.contestPrompt}</p>
-              </div>
-            )}
-            
-            {board.description && (
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                {board.description}
-              </p>
-            )}
-            
-            <div className="space-y-2 text-sm text-gray-500 mb-4">
-              <div className="flex justify-between">
-                <span>Max submissions:</span>
-                <span className="font-medium">{board.maxSubmissionsPerUser || 2}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Frequency:</span>
-                <span className="font-medium capitalize">{board.submissionFrequency || 'unlimited'}</span>
-              </div>
-              {board.maxScore && (
-                <div className="flex justify-between">
-                  <span>Max score:</span>
-                  <span className="font-medium">{board.maxScore}</span>
-                </div>
+            <Flex direction="column" gap="1rem">
+              <Flex justifyContent="space-between" alignItems="flex-start">
+                <Flex direction="column" gap="0.25rem">
+                  <Heading level={4}>{board.name}</Heading>
+                  {board.contestType && (
+                    <Text fontSize="0.875rem" color="blue-600" fontWeight="medium">
+                      {board.contestType}
+                    </Text>
+                  )}
+                </Flex>
+                <Flex gap="0.5rem" alignItems="center">
+                  <Badge variation={statusBadge.class as any}>{statusBadge.text}</Badge>
+                  {userIsAdmin && board.createdBy === userEmail && (
+                    <Flex gap="0.5rem">
+                      <BoardEdit 
+                        board={board} 
+                        onBoardUpdated={fetchBoards} 
+                        isAdmin={userIsAdmin} 
+                        userEmail={userEmail} 
+                      />
+                      <BoardDelete 
+                        board={board} 
+                        onBoardDeleted={fetchBoards} 
+                        isAdmin={userIsAdmin} 
+                        userEmail={userEmail} 
+                      />
+                    </Flex>
+                  )}
+                </Flex>
+              </Flex>
+              
+              {board.contestPrompt && (
+                <Alert variation="info">
+                  <Heading level={5} fontWeight="medium">Contest Question:</Heading>
+                  <Text fontSize="0.875rem">{board.contestPrompt}</Text>
+                </Alert>
               )}
-              <div className="flex justify-between">
-                <span>Created by:</span>
-                <span className="font-medium">{getDisplayName(board.createdBy)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Created:</span>
-                <span className="font-medium">
-                  {new Date(board.createdAt).toLocaleDateString()}
-                </span>
-              </div>
-              {board.lastEditedAt && board.lastEditedAt !== board.createdAt && (
-                <div className="flex justify-between">
-                  <span>Last edited:</span>
-                  <span className="font-medium">
-                    {new Date(board.lastEditedAt).toLocaleDateString()}
-                  </span>
-                </div>
+              
+              {board.description && (
+                <Text fontSize="0.875rem" color="gray-600">
+                  {board.description}
+                </Text>
               )}
-              {expirationInfo && (
-                <div className="flex justify-between">
-                  <span>Expires:</span>
-                  <span className={`font-medium ${expirationInfo.expired ? 'text-red-600' : 'text-orange-600'}`}>
-                    {expirationInfo.text}
-                  </span>
-                </div>
-              )}
-            </div>
+              
+              <Divider />
 
-            {board.judgingCriteria && board.judgingCriteria.length > 0 && (
-              <div className="mb-4">
-                <p className="text-xs text-gray-500 mb-2">Judging Criteria:</p>
-                <div className="flex flex-wrap gap-1">
-                  {board.judgingCriteria.map((criteria, index) => (
-                    <span
-                      key={index}
-                      className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-full"
-                    >
-                      {criteria}
-                    </span>
-                  ))}
+              <Flex direction="column" gap="0.5rem">
+                <Flex justifyContent="space-between">
+                  <Text fontSize="0.875rem" color="gray-500">Max submissions:</Text>
+                  <Text fontSize="0.875rem" fontWeight="medium">{board.maxSubmissionsPerUser || 2}</Text>
+                </Flex>
+                <Flex justifyContent="space-between">
+                  <Text fontSize="0.875rem" color="gray-500">Frequency:</Text>
+                  <Text fontSize="0.875rem" fontWeight="medium">
+                    {(board.submissionFrequency || 'unlimited').charAt(0).toUpperCase() + (board.submissionFrequency || 'unlimited').slice(1)}
+                  </Text>
+                </Flex>
+                {board.maxScore && (
+                  <Flex justifyContent="space-between">
+                    <Text fontSize="0.875rem" color="gray-500">Max score:</Text>
+                    <Text fontSize="0.875rem" fontWeight="medium">{board.maxScore}</Text>
+                  </Flex>
+                )}
+                <Flex justifyContent="space-between">
+                  <Text fontSize="0.875rem" color="gray-500">Created by:</Text>
+                  <Text fontSize="0.875rem" fontWeight="medium">{getDisplayName(board.createdBy)}</Text>
+                </Flex>
+                <Flex justifyContent="space-between">
+                  <Text fontSize="0.875rem" color="gray-500">Created:</Text>
+                  <Text fontSize="0.875rem" fontWeight="medium">
+                    {new Date(board.createdAt).toLocaleDateString()}
+                  </Text>
+                </Flex>
+                {board.lastEditedAt && board.lastEditedAt !== board.createdAt && (
+                  <Flex justifyContent="space-between">
+                    <Text fontSize="0.875rem" color="gray-500">Last edited:</Text>
+                    <Text fontSize="0.875rem" fontWeight="medium">
+                      {new Date(board.lastEditedAt).toLocaleDateString()}
+                    </Text>
+                  </Flex>
+                )}
+                {expirationInfo && (
+                  <Flex justifyContent="space-between">
+                    <Text fontSize="0.875rem" color="gray-500">Expires:</Text>
+                    <Text fontSize="0.875rem" fontWeight="medium" color={expirationInfo.expired ? 'red-600' : 'orange-600'}>
+                      {expirationInfo.text}
+                    </Text>
+                  </Flex>
+                )}
+              </Flex>
+
+              {board.judgingCriteria && board.judgingCriteria.length > 0 && (
+                <div>
+                  <Text fontSize="0.75rem" color="gray-500" marginBottom="0.5rem">Judging Criteria:</Text>
+                  <Flex wrap="wrap" gap="0.5rem">
+                    {board.judgingCriteria.map((criteria, index) => (
+                                           <Badge key={index}>
+                       {criteria}
+                     </Badge>
+                    ))}
+                  </Flex>
                 </div>
-              </div>
-            )}
-            
-            <div className="pt-3 border-t border-gray-100">
-              <button
+              )}
+              
+              <Button
                 onClick={() => handleBoardClick(board.id)}
-                className="w-full text-blue-600 text-sm font-medium hover:text-blue-800 transition-colors"
+                variation="link"
+                size="small"
               >
                 View submissions →
-              </button>
-            </div>
-          </div>
+              </Button>
+            </Flex>
+          </Card>
         );
       })}
     </div>
