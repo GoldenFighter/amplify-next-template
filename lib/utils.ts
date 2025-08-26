@@ -27,9 +27,22 @@ export const canAccessBoard = (
   if (board.createdBy === userEmail) return true;
   
   // Check if user's email is in allowed emails
-  if (board.allowedEmails?.some(email => email === userEmail)) return true;
+  if (board.allowedEmails?.some((email: string) => email === userEmail)) return true;
   
   return false;
+};
+
+// Check if board is active and not expired
+export const isBoardActive = (board: any): boolean => {
+  if (!board.isActive) return false;
+  
+  if (board.expiresAt) {
+    const now = new Date();
+    const expiration = new Date(board.expiresAt);
+    return expiration > now;
+  }
+  
+  return true;
 };
 
 // Check if user can submit to a board (considering submission limits)
@@ -39,11 +52,12 @@ export const canSubmitToBoard = async (
   client: any
 ): Promise<{ canSubmit: boolean; currentCount: number; maxAllowed: number }> => {
   try {
-    // Get user's current submissions to this board
+    // Get user's current submissions to this board (excluding deleted ones)
     const { data: submissions } = await client.models.Submission.list({
       filter: {
         boardId: { eq: boardId },
-        ownerEmail: { eq: userEmail }
+        ownerEmail: { eq: userEmail },
+        isDeleted: { ne: true }
       }
     });
 
@@ -55,6 +69,10 @@ export const canSubmitToBoard = async (
     });
     
     const board = boards?.[0];
+    if (!board || !isBoardActive(board)) {
+      return { canSubmit: false, currentCount, maxAllowed: 0 };
+    }
+    
     const maxAllowed = board?.maxSubmissionsPerUser || 2;
     
     return {
@@ -66,4 +84,68 @@ export const canSubmitToBoard = async (
     console.error("Error checking submission limits:", error);
     return { canSubmit: false, currentCount: 0, maxAllowed: 2 };
   }
+};
+
+// Check submission frequency limits
+export const checkSubmissionFrequency = async (
+  board: any,
+  userEmail: string,
+  client: any
+): Promise<boolean> => {
+  if (board.submissionFrequency === 'unlimited') return true;
+  
+  const now = new Date();
+  let startDate = new Date();
+  
+  switch (board.submissionFrequency) {
+    case 'daily':
+      startDate.setHours(0, 0, 0, 0);
+      break;
+    case 'weekly':
+      startDate.setDate(now.getDate() - now.getDay());
+      startDate.setHours(0, 0, 0, 0);
+      break;
+    case 'monthly':
+      startDate.setDate(1);
+      startDate.setHours(0, 0, 0, 0);
+      break;
+    default:
+      return true;
+  }
+  
+  try {
+    const { data: recentSubmissions } = await client.models.Submission.list({
+      filter: {
+        boardId: { eq: board.id },
+        ownerEmail: { eq: userEmail },
+        submissionDate: { ge: startDate.toISOString() },
+        isDeleted: { ne: true }
+      }
+    });
+    
+    return (recentSubmissions?.length || 0) < (board.maxSubmissionsPerUser || 2);
+  } catch (error) {
+    console.error("Error checking submission frequency:", error);
+    return false;
+  }
+};
+
+// Format expiration time remaining
+export const formatExpirationTime = (expiresAt: string | null): string | null => {
+  if (!expiresAt) return null;
+  
+  const now = new Date();
+  const expiration = new Date(expiresAt);
+  const timeLeft = expiration.getTime() - now.getTime();
+  
+  if (timeLeft <= 0) return "Expired";
+  
+  const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  
+  if (days > 0) return `${days}d ${hours}h left`;
+  if (hours > 0) return `${hours}h left`;
+  
+  const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+  return `${minutes}m left`;
 };

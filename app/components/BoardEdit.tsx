@@ -1,36 +1,58 @@
 "use client";
 
-// TODO: Have boards expire or have a countdown ✅
-// TODO: Add a way to delete boards ✅
-// TODO: Add a way to edit boards ✅
-// TODO: Add a way to view boards ✅
-// TODO: Add a way to view submissions ✅
-// TODO: Add a way to limit to daily or weekly submissions ✅
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { client } from "../../lib/client";
 
-interface CreateBoardProps {
-  onBoardCreated: () => void;
+interface Board {
+  id: string;
+  name: string;
+  description: string | null;
+  isPublic: boolean | null;
+  maxSubmissionsPerUser: number | null;
+  createdBy: string;
+  allowedEmails: (string | null)[] | null;
+  expiresAt: string | null;
+  isActive: boolean | null;
+  submissionFrequency: string | null;
+  lastEditedAt: string | null;
+  lastEditedBy: string | null;
+}
+
+interface BoardEditProps {
+  board: Board;
+  onBoardUpdated: () => void;
   isAdmin: boolean;
   userEmail: string;
 }
 
-export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: CreateBoardProps) {
+export default function BoardEdit({ board, onBoardUpdated, isAdmin, userEmail }: BoardEditProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    isPublic: false,
-    maxSubmissionsPerUser: 2,
-    allowedEmails: "",
-    expiresAt: "",
-    submissionFrequency: "unlimited" as "daily" | "weekly" | "monthly" | "unlimited",
-    isActive: true,
+    name: board.name,
+    description: board.description || "",
+    isPublic: board.isPublic || false,
+    maxSubmissionsPerUser: board.maxSubmissionsPerUser || 2,
+    allowedEmails: board.allowedEmails?.join(", ") || "",
+    expiresAt: board.expiresAt ? new Date(board.expiresAt).toISOString().slice(0, 16) : "",
+    submissionFrequency: (board.submissionFrequency as "daily" | "weekly" | "monthly" | "unlimited") || "unlimited",
+    isActive: board.isActive !== false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!isAdmin) return null;
+  useEffect(() => {
+    setFormData({
+      name: board.name,
+      description: board.description || "",
+      isPublic: board.isPublic || false,
+      maxSubmissionsPerUser: board.maxSubmissionsPerUser || 2,
+      allowedEmails: board.allowedEmails?.join(", ") || "",
+      expiresAt: board.expiresAt ? new Date(board.expiresAt).toISOString().slice(0, 16) : "",
+      submissionFrequency: (board.submissionFrequency as "daily" | "weekly" | "monthly" | "unlimited") || "unlimited",
+      isActive: board.isActive !== false,
+    });
+  }, [board]);
+
+  if (!isAdmin || board.createdBy !== userEmail) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,13 +68,13 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
       // Parse expiration date
       const expiresAt = formData.expiresAt ? new Date(formData.expiresAt).toISOString() : null;
 
-      await client.models.Board.create({
+      await client.models.Board.update({
+        id: board.id,
         name: formData.name,
         description: formData.description || null,
         isPublic: formData.isPublic,
         maxSubmissionsPerUser: formData.maxSubmissionsPerUser,
         allowedEmails: allowedEmails.length > 0 ? allowedEmails : null,
-        createdBy: userEmail,
         expiresAt,
         isActive: formData.isActive,
         submissionFrequency: formData.submissionFrequency,
@@ -60,22 +82,11 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
         lastEditedBy: userEmail,
       });
 
-      // Reset form and close modal
-      setFormData({
-        name: "",
-        description: "",
-        isPublic: false,
-        maxSubmissionsPerUser: 2,
-        allowedEmails: "",
-        expiresAt: "",
-        submissionFrequency: "unlimited",
-        isActive: true,
-      });
       setIsOpen(false);
-      onBoardCreated();
+      onBoardUpdated();
     } catch (error: any) {
-      console.error("Error creating board:", error);
-      alert(`Failed to create board: ${error.message || "Unknown error"}`);
+      console.error("Error updating board:", error);
+      alert(`Failed to update board: ${error.message || "Unknown error"}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -85,15 +96,15 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        className="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700"
       >
-        Create New Board
+        Edit
       </button>
 
       {isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">Create New Board</h2>
+            <h2 className="text-xl font-bold mb-4">Edit Board: {board.name}</h2>
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -213,9 +224,9 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 disabled:opacity-50"
+                  className="flex-1 bg-yellow-600 text-white py-2 px-4 rounded hover:bg-yellow-700 disabled:opacity-50"
                 >
-                  {isSubmitting ? "Creating..." : "Create Board"}
+                  {isSubmitting ? "Updating..." : "Update Board"}
                 </button>
                 <button
                   type="button"

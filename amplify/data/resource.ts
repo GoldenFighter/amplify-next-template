@@ -27,6 +27,11 @@ const schema = a.schema({
       createdBy: a.string().required(), // Admin who created the board
       allowedUsers: a.string().array(), // Specific users who can access (if not public)
       allowedEmails: a.string().array(), // Specific emails who can access (if not public)
+      expiresAt: a.datetime(), // When the board expires (optional)
+      isActive: a.boolean().default(true), // Whether the board is active
+      submissionFrequency: a.enum(['daily', 'weekly', 'monthly', 'unlimited']), // Submission frequency limit
+      lastEditedAt: a.datetime(), // Track when board was last edited
+      lastEditedBy: a.string(), // Track who last edited the board
     })
     .authorization(allow => [
       allow.owner(), // Creator can do everything
@@ -42,6 +47,8 @@ const schema = a.schema({
       result: a.ref('ScoredResponse').required(), // AI evaluation result
       ownerEmail: a.string().required(), // User who submitted
       boardName: a.string().required(), // Denormalized for easier queries
+      submissionDate: a.datetime().required(), // Date of submission for frequency tracking
+      isDeleted: a.boolean().default(false), // Soft delete for submissions
     })
     .authorization(allow => [
       allow.owner(), // Submitter can do everything
