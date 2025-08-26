@@ -6,6 +6,7 @@ import { client } from "@/lib/client";
 interface CreateBoardProps {
   onBoardCreated: () => void;
   isAdmin: boolean;
+  userEmail: string;
 }
 
 export default function CreateBoard({ onBoardCreated, isAdmin }: CreateBoardProps) {
@@ -34,10 +35,11 @@ export default function CreateBoard({ onBoardCreated, isAdmin }: CreateBoardProp
 
       await client.models.Board.create({
         name: formData.name,
-        description: formData.description,
+        description: formData.description || null,
         isPublic: formData.isPublic,
         maxSubmissionsPerUser: formData.maxSubmissionsPerUser,
-        allowedEmails: allowedEmails.length > 0 ? allowedEmails : undefined,
+        allowedEmails: allowedEmails.length > 0 ? allowedEmails : null,
+        createdBy: userEmail,
       });
 
       // Reset form and close modal

@@ -8,12 +8,14 @@ import { getDisplayName } from "@/lib/utils";
 interface Board {
   id: string;
   name: string;
-  description: string;
-  isPublic: boolean;
-  maxSubmissionsPerUser: number;
+  description: string | null;
+  isPublic: boolean | null;
+  maxSubmissionsPerUser: number | null;
   createdBy: string;
-  allowedEmails?: string[];
+  allowedUsers: string[] | null;
+  allowedEmails: string[] | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 interface BoardListProps {
@@ -37,7 +39,7 @@ export default function BoardList({ userEmail }: BoardListProps) {
         // Filter boards based on access permissions
         const accessibleBoards = data.filter((board: Board) => {
           // Public boards are accessible to everyone
-          if (board.isPublic) return true;
+          if (board.isPublic === true) return true;
           
           // Creator can always access their own boards
           if (board.createdBy === userEmail) return true;
@@ -86,11 +88,11 @@ export default function BoardList({ userEmail }: BoardListProps) {
           <div className="flex items-start justify-between mb-3">
             <h3 className="text-lg font-semibold text-gray-900">{board.name}</h3>
             <span className={`px-2 py-1 text-xs rounded-full ${
-              board.isPublic 
+              board.isPublic === true
                 ? 'bg-green-100 text-green-800' 
                 : 'bg-blue-100 text-blue-800'
             }`}>
-              {board.isPublic ? 'Public' : 'Private'}
+              {board.isPublic === true ? 'Public' : 'Private'}
             </span>
           </div>
           
@@ -103,7 +105,7 @@ export default function BoardList({ userEmail }: BoardListProps) {
           <div className="space-y-2 text-sm text-gray-500">
             <div className="flex justify-between">
               <span>Max submissions:</span>
-              <span className="font-medium">{board.maxSubmissionsPerUser}</span>
+              <span className="font-medium">{board.maxSubmissionsPerUser || 2}</span>
             </div>
             <div className="flex justify-between">
               <span>Created by:</span>

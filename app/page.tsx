@@ -244,6 +244,7 @@ export default function App() {
         <CreateBoard 
           onBoardCreated={() => window.location.reload()} 
           isAdmin={isAdmin(loginId)} 
+          userEmail={loginId}
         />
       </div>
 

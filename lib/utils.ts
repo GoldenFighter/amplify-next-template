@@ -21,7 +21,7 @@ export const canAccessBoard = (
   userEmail: string
 ): boolean => {
   // Public boards are accessible to everyone
-  if (board.isPublic) return true;
+  if (board.isPublic === true) return true;
   
   // Creator can always access their own boards
   if (board.createdBy === userEmail) return true;

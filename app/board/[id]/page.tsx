@@ -16,19 +16,21 @@ if (!Amplify.getConfig().Auth) {
 interface Board {
   id: string;
   name: string;
-  description: string;
-  isPublic: boolean;
-  maxSubmissionsPerUser: number;
+  description: string | null;
+  isPublic: boolean | null;
+  maxSubmissionsPerUser: number | null;
   createdBy: string;
-  allowedEmails?: string[];
+  allowedUsers: string[] | null;
+  allowedEmails: string[] | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 interface Submission {
   id: string;
   boardId: string;
   prompt: string;
-  context?: string;
+  context: string | null;
   result: {
     rating: number;
     summary: string;
@@ -39,6 +41,7 @@ interface Submission {
   ownerEmail: string;
   boardName: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export default function BoardPage() {
@@ -75,7 +78,7 @@ export default function BoardPage() {
           return;
         }
 
-        const boardData = boards[0];
+        const boardData = boards[0] as Board;
         setBoard(boardData);
 
         // Check submission limits
@@ -212,11 +215,11 @@ export default function BoardPage() {
           
           <div className="text-right">
             <span className={`px-3 py-1 text-sm rounded-full ${
-              board.isPublic 
+              board.isPublic === true
                 ? 'bg-green-100 text-green-800' 
                 : 'bg-blue-100 text-blue-800'
             }`}>
-              {board.isPublic ? 'Public Board' : 'Private Board'}
+              {board.isPublic === true ? 'Public Board' : 'Private Board'}
             </span>
             <p className="text-sm text-gray-500 mt-1">
               Created by {getDisplayName(board.createdBy)}
