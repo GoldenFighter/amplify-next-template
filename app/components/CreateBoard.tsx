@@ -9,7 +9,7 @@ interface CreateBoardProps {
   userEmail: string;
 }
 
-export default function CreateBoard({ onBoardCreated, isAdmin }: CreateBoardProps) {
+export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: CreateBoardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
