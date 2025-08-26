@@ -47,14 +47,17 @@ const schema = a.schema({
     .returns(a.ref('ScoredResponse'))
     .authorization(allow => allow.authenticated()),
 
-  // Data model for storing results, restricted per-owner
+  // Data model for storing results - public read, owner write
   Analysis: a
     .model({
       prompt: a.string().required(),
       context: a.string(),
       result: a.ref('ScoredResponse').required(),
     })
-    .authorization(allow => [allow.owner()]),
+    .authorization(allow => [
+      allow.owner(), // Owner can do everything
+      allow.authenticated().to(['read']), // Authenticated users can read all analyses
+    ]),
 });
 
 export type Schema = ClientSchema<typeof schema>;

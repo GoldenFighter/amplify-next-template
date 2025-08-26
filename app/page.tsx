@@ -43,7 +43,15 @@ export default function App() {
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [active, setActive] = useState<Analysis | null>(null);
+  const [currentPrompt, setCurrentPrompt] = useState<string>("");
+  
+  // Extract email prefix (characters before @) for display
+  const getDisplayName = (email: string) => {
+    return email.split('@')[0] || email;
+  };
+  
   const loginId = user?.signInDetails?.loginId ?? "User";
+  const displayName = getDisplayName(loginId);
 
   // Use the official Gen2 AI generation hook
   const [{ data: scored, isLoading: loadingScore }, generateScore] = useAIGeneration("scoreTask");
@@ -75,10 +83,13 @@ export default function App() {
     return () => sub.unsubscribe();
   }, []);
 
-  // Trigger AI scoring using Gen2 hooks
+    // Trigger AI scoring using Gen2 hooks
   async function handleScore() {
     const prompt = window.prompt("Describe the task to analyze:");
     if (!prompt) return;
+    
+    // Store the current prompt for later use
+    setCurrentPrompt(prompt);
     
     console.log("Starting AI generation with prompt:", prompt);
     console.log("Current user:", user);
@@ -104,18 +115,18 @@ export default function App() {
           });
           console.log("Direct client result:", directResult);
           
-                     if (directResult.data) {
-             console.log("Direct client succeeded with data:", directResult.data);
-           } else if (directResult.errors) {
-             console.error("Direct client errors:", directResult.errors);
-             console.error("Error details:", JSON.stringify(directResult.errors, null, 2));
-             
-             // Show the first error message
-             const firstError = directResult.errors[0];
-             console.error("First error:", firstError);
-             
-             alert(`AI generation failed: ${firstError?.message || JSON.stringify(directResult.errors)}`);
-           }
+          if (directResult.data) {
+            console.log("Direct client succeeded with data:", directResult.data);
+          } else if (directResult.errors) {
+            console.error("Direct client errors:", directResult.errors);
+            console.error("Error details:", JSON.stringify(directResult.errors, null, 2));
+            
+            // Show the first error message
+            const firstError = directResult.errors[0];
+            console.error("First error:", firstError);
+            
+            alert(`AI generation failed: ${firstError?.message || JSON.stringify(directResult.errors)}`);
+          }
         } catch (directError: any) {
           console.error("Direct client error:", directError);
           alert(`Direct client error: ${directError?.message || 'Unknown error'}`);
@@ -139,9 +150,9 @@ export default function App() {
     if (scored) {
       // Save the result to the Analysis model
       client.models.Analysis.create({
-        prompt: "Task analysis request", // You might want to store the actual prompt
+        prompt: currentPrompt || "Task analysis request", // Use the stored prompt
         context: "Task analysis request",
-        result: scored
+        result: scored,
       }).then(({ data: saved, errors: saveErr }) => {
         if (saveErr?.length) {
           console.error(saveErr);
@@ -151,7 +162,7 @@ export default function App() {
         }
       });
     }
-  }, [scored]);
+  }, [scored, currentPrompt]);
 
 
 
@@ -172,7 +183,7 @@ export default function App() {
   return (
     <main style={{ maxWidth: 900, margin: "0 auto", padding: 16 }}>
       {/* ---- Todos section (unchanged) ---- */}
-      <h1>{loginId}&apos;s todos</h1>
+      <h1>{displayName}&apos;s todos</h1>
       <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
         <button onClick={createTodo}>+ new</button>
       </div>
@@ -230,7 +241,7 @@ export default function App() {
                 <span style={{ opacity: 0.7 }}>{fmt(a.createdAt)}</span>
               </div>
               <div style={{ marginTop: 4, opacity: 0.9 }}>
-                <b>Submitted by:</b> {a.owner || "unknown"}
+                <b>Submitted by:</b> {a.owner ? getDisplayName(a.owner) : "unknown"}
               </div>
               <div style={{ marginTop: 6 }}>
                 <b>Summary:</b> {a.result.summary}
@@ -327,7 +338,7 @@ export default function App() {
                 </div>
               )}
               <div style={{ marginTop: 8, opacity: 0.7 }}>
-                <small>Submitted by: {active.owner || "unknown"}</small>
+                <small>Submitted by: {active.owner ? getDisplayName(active.owner) : "unknown"}</small>
                 <br />
                 <small>Created: {fmt(active.createdAt)}</small>
               </div>
