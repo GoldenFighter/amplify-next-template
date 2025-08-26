@@ -35,8 +35,8 @@ interface Submission {
     rating: number;
     summary: string;
     reasoning: string;
-    risks: string[];
-    recommendations: string[];
+    risks: (string | null)[];
+    recommendations: (string | null)[];
   };
   ownerEmail: string;
   boardName: string;
