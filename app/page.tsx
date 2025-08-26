@@ -45,6 +45,7 @@ export default function App() {
   const [active, setActive] = useState<Analysis | null>(null);
   const [currentPrompt, setCurrentPrompt] = useState<string>("");
   const [hasProcessedScore, setHasProcessedScore] = useState(false);
+  const [manualScoredData, setManualScoredData] = useState<any>(null);
   
   // Extract email prefix (characters before @) for display
   const getDisplayName = (email: string) => {
@@ -69,6 +70,15 @@ export default function App() {
     }
   }, [scored, hasProcessedScore, currentPrompt]);
 
+  // Debug: Monitor manual scored data
+  useEffect(() => {
+    if (manualScoredData) {
+      console.log("Manual scored data set:", manualScoredData);
+      console.log("Current state - hasProcessedScore:", hasProcessedScore, "currentPrompt:", currentPrompt);
+      console.log("Will attempt save:", !hasProcessedScore && currentPrompt);
+    }
+  }, [manualScoredData, hasProcessedScore, currentPrompt]);
+
 
   // Live query of recent analyses, newest first
   useEffect(() => {
@@ -91,13 +101,13 @@ export default function App() {
     const prompt = window.prompt("Describe the task to analyze:");
     if (!prompt) return;
     
-    // Store the current prompt for later use
+    // Reset state for new score
     setCurrentPrompt(prompt);
-    setHasProcessedScore(false); // Reset the processed flag for new score
+    setHasProcessedScore(false);
+    setManualScoredData(null);
     
     console.log("Starting AI generation with prompt:", prompt);
     console.log("Current user:", user);
-    console.log("generateScore function:", generateScore);
     
     try {
       console.log("Calling generateScore...");
@@ -121,6 +131,9 @@ export default function App() {
           
           if (directResult.data) {
             console.log("Direct client succeeded with data:", directResult.data);
+            // Manually update the scored data since the hook isn't working
+            // This will trigger the save useEffect
+            setManualScoredData(directResult.data);
           } else if (directResult.errors) {
             console.error("Direct client errors:", directResult.errors);
             console.error("Error details:", JSON.stringify(directResult.errors, null, 2));
@@ -151,14 +164,18 @@ export default function App() {
 
   // Save the scored result when it's available
   useEffect(() => {
-    if (scored && !hasProcessedScore && currentPrompt) {
+    // Check both hook data and manual data
+    const dataToSave = scored || manualScoredData;
+    
+    if (dataToSave && !hasProcessedScore && currentPrompt) {
       console.log("Saving new analysis with prompt:", currentPrompt);
-      console.log("Scored data to save:", scored);
+      console.log("Scored data to save:", dataToSave);
       console.log("Owner email:", loginId);
+      console.log("Data source:", scored ? "hook" : "manual");
       
       // Validate required fields
-      if (!currentPrompt || !scored || !loginId) {
-        console.error("Missing required fields for save:", { currentPrompt, scored, loginId });
+      if (!currentPrompt || !dataToSave || !loginId) {
+        console.error("Missing required fields for save:", { currentPrompt, dataToSave, loginId });
         alert("Missing required data for save. Please try again.");
         return;
       }
@@ -170,7 +187,7 @@ export default function App() {
       client.models.Analysis.create({
         prompt: currentPrompt,
         context: "Task analysis request",
-        result: scored,
+        result: dataToSave,
         ownerEmail: loginId, // Store the user's email for display
       }).then(({ data: saved, errors: saveErr }) => {
         if (saveErr?.length) {
@@ -181,8 +198,9 @@ export default function App() {
           setHasProcessedScore(false);
         } else {
           console.log("Analysis saved successfully:", saved);
-          // Clear the prompt after successful save
+          // Clear the prompt and manual data after successful save
           setCurrentPrompt("");
+          setManualScoredData(null);
         }
       }).catch((error) => {
         console.error("Exception during save:", error);
@@ -191,7 +209,7 @@ export default function App() {
         setHasProcessedScore(false);
       });
     }
-  }, [scored, hasProcessedScore, currentPrompt, loginId]);
+  }, [scored, manualScoredData, hasProcessedScore, currentPrompt, loginId]);
 
 
 
