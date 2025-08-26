@@ -9,7 +9,6 @@ import { Amplify } from "aws-amplify";
 import outputs from "../amplify_outputs.json";
 import CreateBoard from "./components/CreateBoard";
 import BoardList from "./components/BoardList";
-import AmplifyUITest from "./components/AmplifyUITest";
 import { isAdmin } from "../lib/utils";
 
 // Configure Amplify if not already configured
@@ -252,10 +251,7 @@ export default function App() {
         />
       </div>
 
-      {/* Amplify UI Test */}
-      <div className="mb-8">
-        <AmplifyUITest />
-      </div>
+
 
       {/* Board List */}
       <div className="mb-8">

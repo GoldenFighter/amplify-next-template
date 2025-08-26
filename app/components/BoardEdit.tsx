@@ -191,114 +191,81 @@ export default function BoardEdit({ board, onBoardUpdated, isAdmin, userEmail }:
                 onChange={(e) => setFormData({ ...formData, maxScore: parseInt(e.target.value) })}
               />
 
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="isPublic"
-                  checked={formData.isPublic}
-                  onChange={(e) => setFormData({ ...formData, isPublic: e.target.checked })}
-                  className="mr-2"
-                />
-                <label htmlFor="isPublic" className="text-sm font-medium">
-                  Public Board (visible to all users)
-                </label>
-              </div>
+              <SwitchField
+                label="Public Board (visible to all users)"
+                checked={formData.isPublic}
+                onChange={(e) => setFormData({ ...formData, isPublic: e.target.checked })}
+              />
 
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="mr-2"
-                />
-                <label htmlFor="isActive" className="text-sm font-medium">
-                  Active Board (can accept submissions)
-                </label>
-              </div>
+              <SwitchField
+                label="Active Board (can accept submissions)"
+                checked={formData.isActive}
+                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+              />
 
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Max Submissions Per User
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={formData.maxSubmissionsPerUser}
-                  onChange={(e) => setFormData({ ...formData, maxSubmissionsPerUser: parseInt(e.target.value) })}
-                  className="w-full p-2 border border-gray-300 rounded"
-                />
-              </div>
+              <TextField
+                type="number"
+                label="Max Submissions Per User"
+                min={1}
+                max={10}
+                value={formData.maxSubmissionsPerUser.toString()}
+                onChange={(e) => setFormData({ ...formData, maxSubmissionsPerUser: parseInt(e.target.value) })}
+              />
 
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Submission Frequency Limit
-                </label>
-                <select
-                  value={formData.submissionFrequency}
-                  onChange={(e) => setFormData({ ...formData, submissionFrequency: e.target.value as any })}
-                  className="w-full p-2 border border-gray-300 rounded"
-                >
-                  <option value="unlimited">Unlimited</option>
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                </select>
-              </div>
+              <SelectField
+                label="Submission Frequency Limit"
+                value={formData.submissionFrequency}
+                onChange={(e) => setFormData({ ...formData, submissionFrequency: e.target.value as any })}
+              >
+                <option value="unlimited">Unlimited</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </SelectField>
 
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Expiration Date (Optional)
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.expiresAt}
-                  onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded"
-                  min={new Date().toISOString().slice(0, 16)}
-                />
-                <p className="text-xs text-gray-600 mt-1">
-                  Leave empty for no expiration
-                </p>
-              </div>
+              <TextField
+                type="datetime-local"
+                label="Expiration Date (Optional)"
+                value={formData.expiresAt}
+                onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
+                min={new Date().toISOString().slice(0, 16)}
+                descriptiveText="Leave empty for no expiration"
+              />
 
               {!formData.isPublic && (
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Allowed Emails (comma-separated)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.allowedEmails}
-                    onChange={(e) => setFormData({ ...formData, allowedEmails: e.target.value })}
-                    className="w-full p-2 border border-gray-300 rounded"
-                    placeholder="user1@example.com, user2@example.com"
-                  />
-                  <p className="text-xs text-gray-600 mt-1">
-                    Leave empty to make board private to creator only
-                  </p>
-                </div>
+                <TextField
+                  label="Allowed Emails (comma-separated)"
+                  placeholder="user1@example.com, user2@example.com"
+                  value={formData.allowedEmails}
+                  onChange={(e) => setFormData({ ...formData, allowedEmails: e.target.value })}
+                  descriptiveText="Leave empty to make board private to creator only"
+                />
               )}
 
-              <div className="flex gap-2 pt-4">
-                <button
+              <Flex gap="1rem" justifyContent="space-between">
+                <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 bg-yellow-600 text-white py-2 px-4 rounded hover:bg-yellow-700 disabled:opacity-50"
+                  variation="primary"
+                  size="large"
+                  flex="1"
+                  style={{ backgroundColor: "#d97706" }}
                 >
                   {isSubmitting ? "Updating..." : "Update Board"}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded hover:bg-gray-400"
+                  size="large"
+                  flex="1"
                 >
                   Cancel
-                </button>
-              </div>
-            </form>
-          </div>
+                </Button>
+              </Flex>
+                </Flex>
+              </form>
+            </Flex>
+          </Card>
         </div>
       )}
     </>
