@@ -65,6 +65,7 @@ export default function App() {
     if (scored) {
       console.log("scored data details:", JSON.stringify(scored, null, 2));
       console.log("Current state - hasProcessedScore:", hasProcessedScore, "currentPrompt:", currentPrompt);
+      console.log("Will attempt save:", !hasProcessedScore && currentPrompt);
     }
   }, [scored, hasProcessedScore, currentPrompt]);
 
@@ -152,6 +153,18 @@ export default function App() {
   useEffect(() => {
     if (scored && !hasProcessedScore && currentPrompt) {
       console.log("Saving new analysis with prompt:", currentPrompt);
+      console.log("Scored data to save:", scored);
+      console.log("Owner email:", loginId);
+      
+      // Validate required fields
+      if (!currentPrompt || !scored || !loginId) {
+        console.error("Missing required fields for save:", { currentPrompt, scored, loginId });
+        alert("Missing required data for save. Please try again.");
+        return;
+      }
+      
+      // Mark as processing to prevent duplicate saves
+      setHasProcessedScore(true);
       
       // Save the result to the Analysis model
       client.models.Analysis.create({
@@ -161,14 +174,21 @@ export default function App() {
         ownerEmail: loginId, // Store the user's email for display
       }).then(({ data: saved, errors: saveErr }) => {
         if (saveErr?.length) {
-          console.error(saveErr);
+          console.error("Save errors:", saveErr);
+          console.error("Error details:", JSON.stringify(saveErr, null, 2));
           alert("Failed to save analysis result.");
+          // Reset the flag so user can try again
+          setHasProcessedScore(false);
         } else {
           console.log("Analysis saved successfully:", saved);
-          // Clear the prompt and mark as processed to prevent duplicate saves
+          // Clear the prompt after successful save
           setCurrentPrompt("");
-          setHasProcessedScore(true);
         }
+      }).catch((error) => {
+        console.error("Exception during save:", error);
+        alert(`Save exception: ${error.message || 'Unknown error'}`);
+        // Reset the flag so user can try again
+        setHasProcessedScore(false);
       });
     }
   }, [scored, hasProcessedScore, currentPrompt, loginId]);
