@@ -9,6 +9,7 @@ import { Amplify } from "aws-amplify";
 import outputs from "../amplify_outputs.json";
 import CreateBoard from "./components/CreateBoard";
 import BoardList from "./components/BoardList";
+import ThemeSelector from "./components/ThemeSelector";
 import { isAdmin } from "../lib/utils";
 
 // Configure Amplify if not already configured
@@ -392,6 +393,9 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Theme Selector - Only visible to site owner */}
+      <ThemeSelector />
     </main>
   );
 }

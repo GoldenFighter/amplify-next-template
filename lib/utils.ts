@@ -15,6 +15,11 @@ export const isAdmin = (userEmail: string): boolean => {
   return adminEmails.includes(userEmail);
 };
 
+// Check if user is the site owner
+export const isOwner = (userEmail: string): boolean => {
+  return userEmail === 'cmacleod5@me.com';
+};
+
 // Check if user can access a specific board
 export const canAccessBoard = (
   board: any, 
