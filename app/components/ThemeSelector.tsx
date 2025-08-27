@@ -29,6 +29,15 @@ export default function ThemeSelector() {
 
   const getThemePreview = (themeName: ThemePresetKey) => {
     const theme = themePresets[themeName];
+    if (!theme?.tokens?.colors?.brand?.primary?.value) {
+      return (
+        <div 
+          className="w-6 h-6 rounded-full border-2 border-gray-300 bg-gray-400"
+          title={`${themeName} theme (no color defined)`}
+        />
+      );
+    }
+    
     const primaryColor = theme.tokens.colors.brand.primary.value;
     return (
       <div 
