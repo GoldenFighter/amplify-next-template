@@ -122,8 +122,8 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
       </Button>
 
       {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 pt-8">
+          <Card className="max-w-2xl w-full max-h-[85vh] overflow-y-auto">
             <Flex direction="column" gap="1rem">
               <Heading level={2}>Create New Board</Heading>
               

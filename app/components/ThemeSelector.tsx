@@ -19,7 +19,12 @@ export default function ThemeSelector() {
   const { currentTheme, currentThemeName, setTheme, availableThemes, isOwner, colorMode, toggleColorMode } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
 
+  // Debug logging
+  console.log('ThemeSelector - isOwner:', isOwner);
+  console.log('ThemeSelector - currentThemeName:', currentThemeName);
+
   if (!isOwner) {
+    console.log('ThemeSelector - Not owner, hiding component');
     return null; // Only show to site owner
   }
 

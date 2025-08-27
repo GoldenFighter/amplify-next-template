@@ -37,6 +37,11 @@ export const PicFightThemeProvider: React.FC<ThemeProviderProps> = ({ children, 
   // Check if user is the site owner
   const isOwner = userEmail === 'cmacleod5@me.com';
   
+  // Debug logging
+  console.log('ThemeContext - userEmail:', userEmail);
+  console.log('ThemeContext - isOwner:', isOwner);
+  console.log('ThemeContext - Expected owner email: cmacleod5@me.com');
+  
   // Available themes for the owner to choose from
   const availableThemes: ThemePresetKey[] = ['default', 'ocean', 'sunset', 'forest', 'midnight'];
 

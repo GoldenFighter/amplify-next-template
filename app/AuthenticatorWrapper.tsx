@@ -10,11 +10,27 @@ export default function AuthenticatorWrapper({
 }) {
   return (
     <Authenticator>
-      {({ user }) => (
-        <PicFightThemeProvider userEmail={(user as any)?.attributes?.email || ''}>
-          {children}
-        </PicFightThemeProvider>
-      )}
+      {({ user }) => {
+        // Extract email from different possible user object structures
+        let userEmail = '';
+        
+        if (user) {
+          // Try different possible email properties
+          userEmail = (user as any)?.attributes?.email || 
+                     (user as any)?.signInDetails?.loginId || 
+                     (user as any)?.username || 
+                     '';
+        }
+        
+        console.log('AuthenticatorWrapper - User:', user);
+        console.log('AuthenticatorWrapper - Extracted email:', userEmail);
+        
+        return (
+          <PicFightThemeProvider userEmail={userEmail}>
+            {children}
+          </PicFightThemeProvider>
+        );
+      }}
     </Authenticator>
   );
 }
