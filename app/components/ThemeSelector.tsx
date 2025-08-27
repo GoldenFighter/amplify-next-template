@@ -29,7 +29,12 @@ export default function ThemeSelector() {
 
   const getThemePreview = (themeName: ThemePresetKey) => {
     const theme = themePresets[themeName];
-    if (!theme?.tokens?.colors?.brand?.primary?.value) {
+    
+    // Use type assertion to bypass complex union type issues
+    const themeAny = theme as any;
+    const primaryColor = themeAny?.tokens?.colors?.brand?.primary?.value;
+    
+    if (!primaryColor) {
       return (
         <div 
           className="w-6 h-6 rounded-full border-2 border-gray-300 bg-gray-400"
@@ -38,7 +43,6 @@ export default function ThemeSelector() {
       );
     }
     
-    const primaryColor = theme.tokens.colors.brand.primary.value;
     return (
       <div 
         className="w-6 h-6 rounded-full border-2 border-gray-300"
