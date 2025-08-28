@@ -10,6 +10,16 @@ export const defaultSiteTheme: Theme = {
         secondary: { value: '#059669' }, // Green for success
         tertiary: { value: '#dc2626' }, // Red for errors
       },
+      // Use Amplify UI's standard color tokens for immediate visual impact
+      primary: {
+        10: { value: '#d97706' }, // Light orange
+        20: { value: '#ea580c' }, // Medium orange
+        40: { value: '#c2410c' }, // Dark orange
+        60: { value: '#9a3412' }, // Darker orange
+        80: { value: '#7c2d12' }, // Darkest orange
+        90: { value: '#451a03' }, // Very dark orange
+        100: { value: '#d97706' }, // Main orange
+      },
       font: {
         primary: { value: '#1f2937' }, // Dark gray for main text
         secondary: { value: '#6b7280' }, // Medium gray for secondary text
@@ -120,6 +130,16 @@ export const themePresets = {
           secondary: { value: '#0e7490' },
           tertiary: { value: '#155e75' },
         },
+        // Amplify UI primary colors for immediate visual impact
+        primary: {
+          10: { value: '#0891b2' }, // Light ocean blue
+          20: { value: '#0e7490' }, // Medium ocean blue
+          40: { value: '#155e75' }, // Dark ocean blue
+          60: { value: '#164e63' }, // Darker ocean blue
+          80: { value: '#0f172a' }, // Darkest ocean blue
+          90: { value: '#0c4a6e' }, // Very dark ocean blue
+          100: { value: '#0891b2' }, // Main ocean blue
+        },
       },
     },
   },
@@ -131,6 +151,16 @@ export const themePresets = {
           primary: { value: '#f59e0b' }, // Sunset orange
           secondary: { value: '#d97706' },
           tertiary: { value: '#b45309' },
+        },
+        // Amplify UI primary colors for immediate visual impact
+        primary: {
+          10: { value: '#fef3c7' }, // Light sunset
+          20: { value: '#fde68a' }, // Medium light sunset
+          40: { value: '#f59e0b' }, // Main sunset
+          60: { value: '#d97706' }, // Dark sunset
+          80: { value: '#92400e' }, // Darker sunset
+          90: { value: '#78350f' }, // Darkest sunset
+          100: { value: '#f59e0b' }, // Main sunset
         },
       },
     },
@@ -144,6 +174,16 @@ export const themePresets = {
           secondary: { value: '#047857' },
           tertiary: { value: '#065f46' },
         },
+        // Amplify UI primary colors for immediate visual impact
+        primary: {
+          10: { value: '#d1fae5' }, // Light forest
+          20: { value: '#a7f3d0' }, // Medium light forest
+          40: { value: '#059669' }, // Main forest
+          60: { value: '#047857' }, // Dark forest
+          80: { value: '#065f46' }, // Darker forest
+          90: { value: '#064e3b' }, // Darkest forest
+          100: { value: '#059669' }, // Main forest
+        },
       },
     },
   },
@@ -155,6 +195,16 @@ export const themePresets = {
           primary: { value: '#1e40af' }, // Midnight blue
           secondary: { value: '#1e3a8a' },
           tertiary: { value: '#1e293b' },
+        },
+        // Amplify UI primary colors for immediate visual impact
+        primary: {
+          10: { value: '#dbeafe' }, // Light midnight
+          20: { value: '#bfdbfe' }, // Medium light midnight
+          40: { value: '#1e40af' }, // Main midnight
+          60: { value: '#1e3a8a' }, // Dark midnight
+          80: { value: '#1e293b' }, // Darker midnight
+          90: { value: '#0f172a' }, // Darkest midnight
+          100: { value: '#1e40af' }, // Main midnight
         },
       },
     },

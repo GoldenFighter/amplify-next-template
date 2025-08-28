@@ -18,6 +18,8 @@ import { themePresets, ThemePresetKey } from '../../lib/theme';
 export default function ThemeSelector() {
   const { currentTheme, currentThemeName, setTheme, availableThemes, isOwner, colorMode, toggleColorMode } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationText, setNotificationText] = useState('');
 
   // Debug logging
   console.log('ThemeSelector - isOwner:', isOwner);
@@ -29,7 +31,22 @@ export default function ThemeSelector() {
   }
 
   const handleThemeChange = (themeName: string) => {
+    console.log('Changing theme to:', themeName);
     setTheme(themeName as ThemePresetKey);
+    
+    // Show notification
+    setNotificationText(`Theme changed to ${themeName}!`);
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 3000);
+    
+    // Show visual feedback
+    const button = document.querySelector(`[title="Switch to ${themeName} theme"]`);
+    if (button) {
+      button.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-75');
+      setTimeout(() => {
+        button.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-75');
+      }, 1000);
+    }
   };
 
   const getThemePreview = (themeName: ThemePresetKey) => {
@@ -59,12 +76,19 @@ export default function ThemeSelector() {
 
   return (
     <>
+      {/* Theme Change Notification */}
+      {showNotification && (
+        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg animate-pulse">
+          {notificationText}
+        </div>
+      )}
+
       {/* Theme Toggle Button */}
       <Button
         onClick={() => setIsOpen(!isOpen)}
-        variation="link"
+        variation="primary"
         size="small"
-        className="fixed bottom-4 right-4 z-50 bg-white shadow-lg rounded-full p-3 hover:shadow-xl transition-shadow"
+        className="fixed bottom-4 right-4 z-50 shadow-lg rounded-full p-3 hover:shadow-xl transition-shadow"
         title="Site Theme Settings"
       >
         🎨
