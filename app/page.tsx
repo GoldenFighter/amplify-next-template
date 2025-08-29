@@ -10,6 +10,7 @@ import outputs from "../amplify_outputs.json";
 import CreateBoard from "./components/CreateBoard";
 import BoardList from "./components/BoardList";
 import ThemeSelector from "./components/ThemeSelector";
+import OwnerDashboard from "./components/OwnerDashboard";
 import { isAdmin } from "../lib/utils";
 
 // Configure Amplify if not already configured
@@ -396,6 +397,9 @@ export default function App() {
 
       {/* Theme Selector - Only visible to site owner */}
       <ThemeSelector />
+      
+      {/* Owner Dashboard - Only visible to site owner */}
+      <OwnerDashboard />
     </main>
   );
 }
