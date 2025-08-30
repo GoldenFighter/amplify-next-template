@@ -33,9 +33,12 @@ const schema = a.schema({
       lastEditedAt: a.datetime(), // Track when board was last edited
       lastEditedBy: a.string(), // Track who last edited the board
       contestPrompt: a.string(), // The specific contest prompt/question for submissions
-      contestType: a.string(), // Type of contest (e.g., "boy names", "recipes", "designs")
+      contestType: a.string(), // Type of contest (e.g., "boy names", "recipes", "designs", "image-based")
       judgingCriteria: a.string().array(), // Specific criteria for judging submissions
       maxScore: a.integer().default(100), // Maximum possible score for this contest
+      allowImageSubmissions: a.boolean().default(false), // Whether this board accepts image submissions
+      maxImageSize: a.integer().default(5242880), // 5MB default
+      allowedImageTypes: a.string().array().default(['image/jpeg', 'image/png', 'image/gif']), // Allowed image formats
     })
     .authorization(allow => [
       allow.owner(), // Creator can do everything
@@ -53,6 +56,30 @@ const schema = a.schema({
       boardName: a.string().required(), // Denormalized for easier queries
       submissionDate: a.datetime().required(), // Date of submission for frequency tracking
       isDeleted: a.boolean().default(false), // Soft delete for submissions
+      hasImage: a.boolean().default(false), // Whether this submission includes an image
+      imageUrl: a.string(), // URL to the uploaded image (if applicable)
+    })
+    .authorization(allow => [
+      allow.owner(), // Submitter can do everything
+      allow.authenticated().to(['read']), // All authenticated users can read submissions
+    ]),
+
+  // ImageSubmission model for handling image uploads
+  ImageSubmission: a
+    .model({
+      boardId: a.string().required(), // Reference to the board
+      imageUrl: a.string().required(), // URL to the uploaded image
+      imageKey: a.string().required(), // S3 key for the image
+      imageSize: a.integer().required(), // Size of the image in bytes
+      imageType: a.string().required(), // MIME type of the image
+      prompt: a.string(), // Optional text prompt accompanying the image
+      context: a.string(), // Additional context for the submission
+      result: a.ref('ScoredResponse'), // AI evaluation result (optional, may be generated later)
+      ownerEmail: a.string().required(), // User who submitted
+      boardName: a.string().required(), // Denormalized for easier queries
+      submissionDate: a.datetime().required(), // Date of submission for frequency tracking
+      isDeleted: a.boolean().default(false), // Soft delete for submissions
+      isProcessed: a.boolean().default(false), // Whether AI has processed this image
     })
     .authorization(allow => [
       allow.owner(), // Submitter can do everything
@@ -100,6 +127,23 @@ const schema = a.schema({
       contestPrompt: a.string().required(),
       judgingCriteria: a.string().array().required(),
       maxScore: a.integer().required(),
+    })
+    .returns(a.ref('ScoredResponse'))
+    .authorization(allow => allow.authenticated()),
+
+  // AI generation for image-based contest judging
+  scoreImageContest: a.generation({
+    aiModel: a.ai.model('Claude 3 Haiku'),
+    systemPrompt: 'You are an expert contest judge specializing in image evaluation. You will be given a contest type, prompt, judging criteria, and an image description. Rate the image submission based on the criteria and return a JSON object with: rating (integer based on maxScore), summary (string), reasoning (string), risks (array of strings), recommendations (array of strings). Be strict and consistent in your judging. Consider visual appeal, creativity, technical skill, and adherence to contest requirements. Return only valid JSON.',
+    inferenceConfiguration: { temperature: 0.1, topP: 0.1, maxTokens: 1000 },
+  })
+    .arguments({
+      imageDescription: a.string().required(), // Description of the image content
+      contestType: a.string().required(),
+      contestPrompt: a.string().required(),
+      judgingCriteria: a.string().array().required(),
+      maxScore: a.integer().required(),
+      prompt: a.string(), // Optional text prompt accompanying the image
     })
     .returns(a.ref('ScoredResponse'))
     .authorization(allow => allow.authenticated()),
