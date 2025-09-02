@@ -137,139 +137,178 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
       </Button>
 
       {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 pt-8">
-          <Card className="max-w-2xl w-full max-h-[85vh] overflow-y-auto">
-            <Flex direction="column" gap="1rem">
-              <Heading level={2}>Create New Board</Heading>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <Flex direction="column" gap="1.5rem">
+              <Heading level={2}>Create New Contest Board</Heading>
               
               <form onSubmit={handleSubmit}>
-                <Flex direction="column" gap="1rem">
-              <TextField
-                label="Board Name *"
-                placeholder="Enter board name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
+                <Flex direction="column" gap="1.5rem">
+                  {/* Basic Information */}
+                  <div>
+                    <Heading level={4} marginBottom="0.5rem">📋 Basic Information</Heading>
+                    <Flex direction="column" gap="1rem">
+                      <TextField
+                        label="Board Name *"
+                        placeholder="Enter board name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        required
+                      />
 
-              <TextAreaField
-                label="Description"
-                placeholder="Enter board description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={3}
-              />
+                      <TextAreaField
+                        label="Description"
+                        placeholder="Enter board description"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        rows={2}
+                      />
+                    </Flex>
+                  </div>
 
-              <TextField
-                label="Contest Type"
-                placeholder="e.g., Boy Names, Recipes, Designs"
-                value={formData.contestType}
-                onChange={(e) => setFormData({ ...formData, contestType: e.target.value })}
-              />
+                  {/* Contest Details */}
+                  <div>
+                    <Heading level={4} marginBottom="0.5rem">🎯 Contest Details</Heading>
+                    <Flex direction="column" gap="1rem">
+                      <TextField
+                        label="Contest Type"
+                        placeholder="e.g., Boy Names, Recipes, Designs"
+                        value={formData.contestType}
+                        onChange={(e) => setFormData({ ...formData, contestType: e.target.value })}
+                      />
 
-              <TextAreaField
-                label="Contest Prompt/Question"
-                placeholder="What should users submit? e.g., 'Submit your favorite boy names'"
-                value={formData.contestPrompt}
-                onChange={(e) => setFormData({ ...formData, contestPrompt: e.target.value })}
-                rows={3}
-              />
+                      <TextAreaField
+                        label="Contest Prompt/Question"
+                        placeholder="What should users submit? e.g., 'Submit your favorite boy names'"
+                        value={formData.contestPrompt}
+                        onChange={(e) => setFormData({ ...formData, contestPrompt: e.target.value })}
+                        rows={2}
+                      />
 
-              <TextField
-                label="Judging Criteria (comma-separated)"
-                placeholder="e.g., Creativity, Uniqueness, Popularity, Meaning"
-                value={formData.judgingCriteria}
-                onChange={(e) => setFormData({ ...formData, judgingCriteria: e.target.value })}
-              />
+                      <TextField
+                        label="Judging Criteria (comma-separated)"
+                        placeholder="e.g., Creativity, Uniqueness, Popularity, Meaning"
+                        value={formData.judgingCriteria}
+                        onChange={(e) => setFormData({ ...formData, judgingCriteria: e.target.value })}
+                      />
 
-              <TextField
-                type="number"
-                label="Maximum Score"
-                min={10}
-                max={1000}
-                value={formData.maxScore.toString()}
-                onChange={(e) => setFormData({ ...formData, maxScore: parseInt(e.target.value) })}
-              />
+                      <TextField
+                        type="number"
+                        label="Maximum Score"
+                        min={10}
+                        max={1000}
+                        value={formData.maxScore.toString()}
+                        onChange={(e) => setFormData({ ...formData, maxScore: parseInt(e.target.value) })}
+                      />
+                    </Flex>
+                  </div>
 
-              <SwitchField
-                label="Public Board (visible to all users)"
-                checked={formData.isPublic}
-                onChange={(e) => setFormData({ ...formData, isPublic: e.target.checked })}
-              />
+                  {/* Board Settings */}
+                  <div>
+                    <Heading level={4} marginBottom="0.5rem">⚙️ Board Settings</Heading>
+                    <Flex direction="column" gap="1rem">
+                      <Flex gap="1rem" wrap="wrap">
+                        <div className="flex-1 min-w-[200px]">
+                          <SwitchField
+                            label="Public Board"
+                            checked={formData.isPublic}
+                            onChange={(e) => setFormData({ ...formData, isPublic: e.target.checked })}
+                            descriptiveText="Visible to all users"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-[200px]">
+                          <SwitchField
+                            label="Active Board"
+                            checked={formData.isActive}
+                            onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                            descriptiveText="Can accept submissions"
+                          />
+                        </div>
+                      </Flex>
 
-              <SwitchField
-                label="Active Board (can accept submissions)"
-                checked={formData.isActive}
-                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-              />
+                      <Flex gap="1rem" wrap="wrap">
+                        <div className="flex-1 min-w-[200px]">
+                          <TextField
+                            type="number"
+                            label="Max Submissions Per User"
+                            min={1}
+                            max={10}
+                            value={formData.maxSubmissionsPerUser.toString()}
+                            onChange={(e) => setFormData({ ...formData, maxSubmissionsPerUser: parseInt(e.target.value) })}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-[200px]">
+                          <SelectField
+                            label="Submission Frequency"
+                            value={formData.submissionFrequency}
+                            onChange={(e) => setFormData({ ...formData, submissionFrequency: e.target.value as any })}
+                          >
+                            <option value="unlimited">Unlimited</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                          </SelectField>
+                        </div>
+                      </Flex>
 
-              <TextField
-                type="number"
-                label="Max Submissions Per User"
-                min={1}
-                max={10}
-                value={formData.maxSubmissionsPerUser.toString()}
-                onChange={(e) => setFormData({ ...formData, maxSubmissionsPerUser: parseInt(e.target.value) })}
-              />
+                      <TextField
+                        type="datetime-local"
+                        label="Expiration Date (Optional)"
+                        value={formData.expiresAt}
+                        onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
+                        min={new Date().toISOString().slice(0, 16)}
+                        descriptiveText="Leave empty for no expiration"
+                      />
 
-              <SelectField
-                label="Submission Frequency Limit"
-                value={formData.submissionFrequency}
-                onChange={(e) => setFormData({ ...formData, submissionFrequency: e.target.value as any })}
-              >
-                <option value="unlimited">Unlimited</option>
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-              </SelectField>
+                      {!formData.isPublic && (
+                        <TextField
+                          label="Allowed Emails (comma-separated)"
+                          placeholder="user1@example.com, user2@example.com"
+                          value={formData.allowedEmails}
+                          onChange={(e) => setFormData({ ...formData, allowedEmails: e.target.value })}
+                          descriptiveText="Leave empty to make board private to creator only"
+                        />
+                      )}
+                    </Flex>
+                  </div>
 
-              <TextField
-                type="datetime-local"
-                label="Expiration Date (Optional)"
-                value={formData.expiresAt}
-                onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
-                min={new Date().toISOString().slice(0, 16)}
-                descriptiveText="Leave empty for no expiration"
-              />
+                  {/* Image Submission Settings */}
+                  <div>
+                    <Heading level={4} marginBottom="0.5rem">📸 Image Submission Settings</Heading>
+                    <Flex direction="column" gap="1rem">
+                      <SwitchField
+                        label="Allow Image Submissions"
+                        checked={formData.allowImageSubmissions}
+                        onChange={(e) => setFormData({ ...formData, allowImageSubmissions: e.target.checked })}
+                        descriptiveText="Enable users to upload images for this contest"
+                      />
 
-              {!formData.isPublic && (
-                <TextField
-                  label="Allowed Emails (comma-separated)"
-                  placeholder="user1@example.com, user2@example.com"
-                  value={formData.allowedEmails}
-                  onChange={(e) => setFormData({ ...formData, allowedEmails: e.target.value })}
-                  descriptiveText="Leave empty to make board private to creator only"
-                />
-              )}
-
-              <SwitchField
-                label="Allow Image Submissions"
-                checked={formData.allowImageSubmissions}
-                onChange={(e) => setFormData({ ...formData, allowImageSubmissions: e.target.checked })}
-                descriptiveText="Enable users to upload images for this contest"
-              />
-
-              {formData.allowImageSubmissions && (
-                <>
-                  <TextField
-                    type="number"
-                    label="Max Image Size (bytes)"
-                    min={1048576}
-                    max={52428800}
-                    value={formData.maxImageSize.toString()}
-                    onChange={(e) => setFormData({ ...formData, maxImageSize: parseInt(e.target.value) })}
-                    descriptiveText="Maximum file size in bytes (1MB = 1,048,576 bytes)"
-                  />
-
-                  <TextField
-                    label="Allowed Image Types (comma-separated)"
-                    placeholder="image/jpeg, image/png, image/gif"
-                    value={formData.allowedImageTypes}
-                    onChange={(e) => setFormData({ ...formData, allowedImageTypes: e.target.value })}
-                    descriptiveText="MIME types for allowed image formats"
-                  />
-                </>
-              )}
+                      {formData.allowImageSubmissions && (
+                        <Flex gap="1rem" wrap="wrap">
+                          <div className="flex-1 min-w-[200px]">
+                            <TextField
+                              type="number"
+                              label="Max Image Size (MB)"
+                              min={1}
+                              max={50}
+                              value={Math.round(formData.maxImageSize / (1024 * 1024)).toString()}
+                              onChange={(e) => setFormData({ ...formData, maxImageSize: parseInt(e.target.value) * 1024 * 1024 })}
+                              descriptiveText="Maximum file size in megabytes"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-[200px]">
+                            <TextField
+                              label="Allowed Image Types"
+                              placeholder="image/jpeg, image/png, image/gif"
+                              value={formData.allowedImageTypes}
+                              onChange={(e) => setFormData({ ...formData, allowedImageTypes: e.target.value })}
+                              descriptiveText="MIME types (comma-separated)"
+                            />
+                          </div>
+                        </Flex>
+                      )}
+                    </Flex>
+                  </div>
 
               <Flex gap="1rem" justifyContent="space-between">
                 <Button
