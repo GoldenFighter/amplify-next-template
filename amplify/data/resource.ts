@@ -1,4 +1,5 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
+import { imageAnalysis } from "../functions/imageAnalysis/resource";
 
 const schema = a.schema({
   Todo: a
@@ -172,6 +173,20 @@ const schema = a.schema({
       allow.owner(), // Owner can do everything
       allow.authenticated().to(['read']), // All authenticated users can read all analyses
     ]),
+
+  // Image Analysis function following Amplify Gen 2 best practices
+  analyzeImage: a
+    .query()
+    .arguments({
+      imageUrl: a.string().required(),
+      analysisType: a.string(),
+      specificQuestions: a.string().array(),
+      documentType: a.string(),
+      expectedFields: a.string().array(),
+    })
+    .returns(a.json())
+    .authorization(allow => [allow.authenticated()])
+    .handler(a.handler.function(imageAnalysis)),
 });
 
 export type Schema = ClientSchema<typeof schema>;

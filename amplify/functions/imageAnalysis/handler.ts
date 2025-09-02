@@ -1,6 +1,6 @@
+import type { Schema } from "../../data/resource";
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
 // Initialize AWS clients
 const bedrockClient = new BedrockRuntimeClient({ 
@@ -11,57 +11,27 @@ const s3Client = new S3Client({ region: process.env.BEDROCK_REGION || 'eu-west-1
 // Claude 3.5 Sonnet model ID
 const MODEL_ID = 'anthropic.claude-3-5-sonnet-20241022-v2:0';
 
-interface ImageAnalysisRequest {
-  imageUrl: string;
-  analysisType?: string;
-  specificQuestions?: string[];
-  documentType?: string;
-  expectedFields?: string[];
-}
-
-interface ImageAnalysisResponse {
-  success: boolean;
-  data?: any;
-  error?: string;
-  processingTime?: number;
-}
-
-export const handler = async (
-  event: APIGatewayProxyEvent
-): Promise<APIGatewayProxyResult> => {
+export const handler: Schema["analyzeImage"]["functionHandler"] = async (event) => {
   const startTime = Date.now();
   
   console.log('Lambda function started');
   console.log('Event:', JSON.stringify(event, null, 2));
   
   try {
-    // Parse request body
-    const body = JSON.parse(event.body || '{}') as ImageAnalysisRequest;
-    const { imageUrl, analysisType, specificQuestions, documentType, expectedFields } = body;
+    // Get arguments from the event (typed from schema)
+    const { imageUrl, analysisType, specificQuestions, documentType, expectedFields } = event.arguments;
 
-    console.log('Parsed request body:', {
+    console.log('Parsed request arguments:', {
       imageUrl,
-      analysisType,
-      documentType,
+      analysisType: analysisType || undefined,
+      documentType: documentType || undefined,
       hasQuestions: specificQuestions && specificQuestions.length > 0,
       hasExpectedFields: expectedFields && expectedFields.length > 0
     });
 
     if (!imageUrl) {
       console.log('Error: Image URL is required');
-      return {
-        statusCode: 400,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers': 'Content-Type',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        },
-        body: JSON.stringify({
-          success: false,
-          error: 'Image URL is required',
-        }),
-      };
+      throw new Error('Image URL is required');
     }
 
     // Download image from S3 or URL
@@ -70,8 +40,16 @@ export const handler = async (
     console.log('Image downloaded and encoded, length:', imageBase64.length);
 
     // Determine analysis type and create appropriate prompt
-    const systemPrompt = createSystemPrompt(analysisType, documentType, expectedFields);
-    const userPrompt = createUserPrompt(analysisType, specificQuestions, expectedFields);
+    const systemPrompt = createSystemPrompt(
+      analysisType || undefined, 
+      documentType || undefined, 
+      expectedFields?.filter(field => field !== null) || undefined
+    );
+    const userPrompt = createUserPrompt(
+      analysisType || undefined, 
+      specificQuestions?.filter(question => question !== null) || undefined, 
+      expectedFields?.filter(field => field !== null) || undefined
+    );
     
     console.log('System prompt:', systemPrompt);
     console.log('User prompt:', userPrompt);
@@ -134,19 +112,11 @@ export const handler = async (
     const processingTime = Date.now() - startTime;
     console.log('Processing completed successfully in', processingTime, 'ms');
 
+    // Return the result directly (typed from schema)
     return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      },
-      body: JSON.stringify({
-        success: true,
-        data: parsedResult,
-        processingTime,
-      } as ImageAnalysisResponse),
+      success: true,
+      data: parsedResult,
+      processingTime,
     };
 
   } catch (error) {
@@ -154,19 +124,11 @@ export const handler = async (
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     const processingTime = Date.now() - startTime;
 
+    // Return error result (typed from schema)
     return {
-      statusCode: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      },
-      body: JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        processingTime,
-      } as ImageAnalysisResponse),
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      processingTime,
     };
   }
 };
