@@ -38,7 +38,7 @@ const schema = a.schema({
       maxScore: a.integer().default(100), // Maximum possible score for this contest
       allowImageSubmissions: a.boolean().default(false), // Whether this board accepts image submissions
       maxImageSize: a.integer().default(5242880), // 5MB default
-      allowedImageTypes: a.string().array().default(['image/jpeg', 'image/png', 'image/gif']), // Allowed image formats
+      allowedImageTypes: a.string().array(), // Allowed image formats
     })
     .authorization(allow => [
       allow.owner(), // Creator can do everything

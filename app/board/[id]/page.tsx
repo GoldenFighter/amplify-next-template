@@ -6,6 +6,7 @@ import { useAuthenticator } from "@aws-amplify/ui-react";
 import { client, useAIGeneration } from "../../../lib/client";
 import { getDisplayName, canSubmitToBoard, isAdmin } from "../../../lib/utils";
 import SubmissionsView from "../../components/SubmissionsView";
+import ImageUpload from "../../components/ImageUpload";
 import { Amplify } from "aws-amplify";
 import outputs from "../../../amplify_outputs.json";
 
@@ -34,6 +35,9 @@ interface Board {
   contestType: string | null;
   judgingCriteria: (string | null)[] | null;
   maxScore: number | null;
+  allowImageSubmissions: boolean | null;
+  maxImageSize: number | null;
+  allowedImageTypes: (string | null)[] | null;
 }
 
 interface Submission {
@@ -293,6 +297,87 @@ export default function BoardPage() {
     }
   };
 
+  const handleImageUpload = async (imageUrl: string, imageKey: string, imageSize: number, imageType: string) => {
+    if (!board) return;
+    
+    if (!isBoardActive(board)) {
+      alert("This board is no longer active or has expired.");
+      return;
+    }
+
+    if (!submissionLimit.canSubmit) {
+      alert(`You have reached the maximum number of submissions (${submissionLimit.maxAllowed}) for this board.`);
+      return;
+    }
+
+    // Check frequency limits
+    const frequencyOk = await checkFrequencyLimit(board, loginId);
+    if (!frequencyOk) {
+      const frequencyText = board.submissionFrequency === 'daily' ? 'today' : 
+                           board.submissionFrequency === 'weekly' ? 'this week' : 'this month';
+      alert(`You have reached the maximum submissions for ${frequencyText}.`);
+      return;
+    }
+
+    // Get optional text prompt for the image
+    let prompt = "";
+    if (board.contestPrompt) {
+      prompt = window.prompt(`Contest Question: ${board.contestPrompt}\n\nOptional text description for your image:`) || "";
+    } else {
+      prompt = window.prompt("Optional text description for your image:") || "";
+    }
+
+    try {
+      // Create image submission record
+      await client.models.ImageSubmission.create({
+        boardId: board.id,
+        imageUrl,
+        imageKey,
+        imageSize,
+        imageType,
+        prompt: prompt || null,
+        context: board.contestPrompt || null,
+        ownerEmail: loginId,
+        boardName: board.name,
+        submissionDate: new Date().toISOString(),
+        isProcessed: false,
+      });
+
+      // Generate AI evaluation for the image
+      if (board.contestType && board.contestPrompt && board.judgingCriteria && board.maxScore) {
+        // For now, we'll use a placeholder description since we don't have image analysis yet
+        // In a real implementation, you'd use AWS Rekognition or similar to analyze the image
+        const imageDescription = `Image uploaded: ${imageType}, ${Math.round(imageSize / 1024)}KB. ${prompt ? `Description: ${prompt}` : 'No description provided.'}`;
+        
+        const result = await client.generations.scoreImageContest({
+          imageDescription,
+          contestType: board.contestType,
+          contestPrompt: board.contestPrompt,
+          judgingCriteria: board.judgingCriteria.filter(c => c !== null) as string[],
+          maxScore: board.maxScore,
+          prompt: prompt || null,
+        });
+
+        if (result.data) {
+          // Update the image submission with the AI result
+          await client.models.ImageSubmission.update({
+            id: (await client.models.ImageSubmission.list({
+              filter: { imageKey: { eq: imageKey } }
+            })).data?.[0]?.id,
+            result: result.data,
+            isProcessed: true,
+          });
+        }
+      }
+
+      alert("Image uploaded successfully! The AI is evaluating your submission.");
+      window.location.reload();
+    } catch (error: any) {
+      console.error("Error uploading image:", error);
+      alert(`Failed to upload image: ${error.message || 'Unknown error'}`);
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-8">Loading board...</div>;
   }
@@ -396,13 +481,34 @@ export default function BoardPage() {
           )}
           
           {submissionLimit.canSubmit ? (
-            <button
-              onClick={handleScore}
-              disabled={loadingScore}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loadingScore ? "Generating..." : "Submit Entry"}
-            </button>
+            <div className="space-y-4">
+              {/* Text Submission */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h3 className="text-lg font-medium mb-3">📝 Text Submission</h3>
+                <button
+                  onClick={handleScore}
+                  disabled={loadingScore}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {loadingScore ? "Generating..." : "Submit Text Entry"}
+                </button>
+              </div>
+
+              {/* Image Submission */}
+              {board.allowImageSubmissions && (
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-lg font-medium mb-3">📸 Image Submission</h3>
+                  <ImageUpload
+                    boardId={board.id}
+                    boardName={board.name}
+                    maxImageSize={board.maxImageSize || 5242880}
+                    allowedImageTypes={board.allowedImageTypes?.filter(t => t !== null) as string[] || ['image/jpeg', 'image/png', 'image/gif']}
+                    onImageUploaded={handleImageUpload}
+                    onError={(error) => alert(error)}
+                  />
+                </div>
+              )}
+            </div>
           ) : (
             <div className="text-center py-4">
               <p className="text-gray-600 mb-2">

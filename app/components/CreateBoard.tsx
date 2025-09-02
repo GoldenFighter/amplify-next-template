@@ -43,6 +43,9 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
     contestType: "",
     judgingCriteria: "",
     maxScore: 100,
+    allowImageSubmissions: false,
+    maxImageSize: 5242880, // 5MB
+    allowedImageTypes: "image/jpeg,image/png,image/gif",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -68,6 +71,12 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
         .map(criteria => criteria.trim())
         .filter(criteria => criteria.length > 0);
 
+      // Parse allowed image types from comma-separated string
+      const allowedImageTypes = formData.allowedImageTypes
+        .split(",")
+        .map(type => type.trim())
+        .filter(type => type.length > 0);
+
       await client.models.Board.create({
         name: formData.name,
         description: formData.description || null,
@@ -84,6 +93,9 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
         contestType: formData.contestType || null,
         judgingCriteria: judgingCriteria.length > 0 ? judgingCriteria : null,
         maxScore: formData.maxScore,
+        allowImageSubmissions: formData.allowImageSubmissions,
+        maxImageSize: formData.maxImageSize,
+        allowedImageTypes: allowedImageTypes.length > 0 ? allowedImageTypes : null,
       });
 
       // Reset form and close modal
@@ -100,6 +112,9 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
         contestType: "",
         judgingCriteria: "",
         maxScore: 100,
+        allowImageSubmissions: false,
+        maxImageSize: 5242880,
+        allowedImageTypes: "image/jpeg,image/png,image/gif",
       });
       setIsOpen(false);
       onBoardCreated();
@@ -225,6 +240,35 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
                   onChange={(e) => setFormData({ ...formData, allowedEmails: e.target.value })}
                   descriptiveText="Leave empty to make board private to creator only"
                 />
+              )}
+
+              <SwitchField
+                label="Allow Image Submissions"
+                checked={formData.allowImageSubmissions}
+                onChange={(e) => setFormData({ ...formData, allowImageSubmissions: e.target.checked })}
+                descriptiveText="Enable users to upload images for this contest"
+              />
+
+              {formData.allowImageSubmissions && (
+                <>
+                  <TextField
+                    type="number"
+                    label="Max Image Size (bytes)"
+                    min={1048576}
+                    max={52428800}
+                    value={formData.maxImageSize.toString()}
+                    onChange={(e) => setFormData({ ...formData, maxImageSize: parseInt(e.target.value) })}
+                    descriptiveText="Maximum file size in bytes (1MB = 1,048,576 bytes)"
+                  />
+
+                  <TextField
+                    label="Allowed Image Types (comma-separated)"
+                    placeholder="image/jpeg, image/png, image/gif"
+                    value={formData.allowedImageTypes}
+                    onChange={(e) => setFormData({ ...formData, allowedImageTypes: e.target.value })}
+                    descriptiveText="MIME types for allowed image formats"
+                  />
+                </>
               )}
 
               <Flex gap="1rem" justifyContent="space-between">
