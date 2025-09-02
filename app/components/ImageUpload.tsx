@@ -12,7 +12,7 @@ import {
   Divider,
 } from '@aws-amplify/ui-react';
 import { uploadData, getUrl } from 'aws-amplify/storage';
-import { extractImageMetadata, ImageMetadata } from '../../lib/imageMetadata';
+import { extractImageMetadata, ImageMetadata, validateImageForContest, getValidationReport } from '../../lib/imageMetadata';
 
 interface ImageUploadProps {
   boardId: string;
@@ -36,6 +36,9 @@ export default function ImageUpload({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [metadata, setMetadata] = useState<ImageMetadata | null>(null);
+  const [validationResult, setValidationResult] = useState<{ isValid: boolean; reasons: string[]; score: number } | null>(null);
+  const [showValidationDetails, setShowValidationDetails] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const formatFileSize = (bytes: number): string => {
@@ -60,7 +63,7 @@ export default function ImageUpload({
     return null;
   };
 
-  const handleFileSelect = (file: File) => {
+  const handleFileSelect = async (file: File) => {
     const validationError = validateFile(file);
     if (validationError) {
       onError(validationError);
@@ -72,6 +75,22 @@ export default function ImageUpload({
     // Create preview URL
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
+
+    // Extract and validate metadata
+    try {
+      const extractedMetadata = await extractImageMetadata(file);
+      setMetadata(extractedMetadata);
+      
+      const validation = validateImageForContest(extractedMetadata);
+      setValidationResult(validation);
+      
+      if (!validation.isValid) {
+        onError(`Image validation failed: ${validation.reasons.join(', ')}`);
+      }
+    } catch (error) {
+      console.error('Error extracting metadata:', error);
+      onError('Failed to analyze image metadata');
+    }
   };
 
   const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,6 +193,9 @@ export default function ImageUpload({
 
   const handleRemoveFile = () => {
     setSelectedFile(null);
+    setMetadata(null);
+    setValidationResult(null);
+    setShowValidationDetails(false);
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
@@ -256,7 +278,36 @@ export default function ImageUpload({
                 <Text fontSize="0.75rem" color="gray-600">
                   {formatFileSize(selectedFile.size)} • {selectedFile.type}
                 </Text>
+                
+                {/* Validation Status */}
+                {validationResult && (
+                  <div className="mt-2">
+                    <Badge 
+                      variation={validationResult.isValid ? "success" : "error"} 
+                      size="small"
+                    >
+                      {validationResult.isValid ? "✅ Valid" : "❌ Invalid"} ({validationResult.score}/100)
+                    </Badge>
+                    <button
+                      onClick={() => setShowValidationDetails(!showValidationDetails)}
+                      className="ml-2 text-xs text-blue-600 hover:text-blue-800 underline"
+                    >
+                      {showValidationDetails ? "Hide Details" : "Show Details"}
+                    </button>
+                  </div>
+                )}
               </div>
+
+              {/* Validation Details */}
+              {showValidationDetails && validationResult && metadata && (
+                <div className="w-full max-w-xs text-left">
+                  <Alert variation={validationResult.isValid ? "success" : "error"}>
+                    <Text fontSize="0.75rem" whiteSpace="pre-line">
+                      {getValidationReport(metadata)}
+                    </Text>
+                  </Alert>
+                </div>
+              )}
 
               {/* Upload Progress */}
               {isUploading && (
@@ -281,6 +332,7 @@ export default function ImageUpload({
                       onClick={handleUpload}
                       variation="primary"
                       size="small"
+                      isDisabled={!validationResult?.isValid}
                     >
                       Upload Image
                     </Button>
@@ -319,8 +371,9 @@ export default function ImageUpload({
         {/* Upload Tips */}
         <Alert variation="info">
           <Text fontSize="0.75rem">
-            💡 <strong>Tips:</strong> For best results, use high-quality images with good lighting. 
-            The AI will evaluate your image based on creativity, technical skill, and adherence to contest requirements.
+            💡 <strong>Requirements:</strong> Images must be taken from a phone camera within the last hour. 
+            Stock photos and old images will be rejected. The AI will evaluate your image based on creativity, 
+            technical skill, and adherence to contest requirements.
           </Text>
         </Alert>
       </Flex>
