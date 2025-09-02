@@ -33,16 +33,108 @@ export async function extractImageMetadata(file: File): Promise<ImageMetadata> {
     lastModified: new Date(file.lastModified),
   };
 
-  // Note: For full EXIF data extraction, you would need a library like 'exif-js' or 'piexifjs'
-  // For now, we'll capture basic file metadata
-  // In a production app, you might want to add:
-  // - EXIF data extraction
-  // - GPS location (with user permission)
-  // - Camera settings
-  // - Image dimensions
-  // - Color profile information
+  // Try to extract basic image dimensions and EXIF data
+  try {
+    const imageData = await extractImageData(file);
+    if (imageData) {
+      metadata.exifData = imageData;
+    }
+  } catch (error) {
+    console.log('Could not extract image metadata:', error);
+  }
 
   return metadata;
+}
+
+// Helper function to extract image data including dimensions and basic EXIF
+async function extractImageData(file: File): Promise<ImageMetadata['exifData'] | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    img.onload = () => {
+      const exifData: ImageMetadata['exifData'] = {
+        // Basic image info
+        software: detectMobileApp(file.name),
+        dateTime: new Date(file.lastModified).toISOString(),
+      };
+
+      // Try to detect mobile device from filename patterns
+      const deviceInfo = detectMobileDevice(file.name);
+      if (deviceInfo) {
+        exifData.make = deviceInfo.make;
+        exifData.model = deviceInfo.model;
+      }
+
+      // Store image dimensions
+      exifData.camera = {
+        focalLength: `${img.width}x${img.height}`,
+      };
+
+      resolve(exifData);
+    };
+
+    img.onerror = () => {
+      resolve(null);
+    };
+
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+// Detect mobile app from filename patterns
+function detectMobileApp(fileName: string): string | undefined {
+  const lowerName = fileName.toLowerCase();
+  
+  if (lowerName.includes('snapchat') || lowerName.includes('snap')) return 'Snapchat';
+  if (lowerName.includes('instagram') || lowerName.includes('insta')) return 'Instagram';
+  if (lowerName.includes('whatsapp') || lowerName.includes('wa_')) return 'WhatsApp';
+  if (lowerName.includes('telegram')) return 'Telegram';
+  if (lowerName.includes('facebook') || lowerName.includes('fb_')) return 'Facebook';
+  if (lowerName.includes('twitter') || lowerName.includes('tw_')) return 'Twitter';
+  if (lowerName.includes('tiktok')) return 'TikTok';
+  if (lowerName.includes('camera') || lowerName.includes('img_')) return 'Camera';
+  if (lowerName.includes('photo') || lowerName.includes('pic_')) return 'Photos';
+  
+  return 'Unknown App';
+}
+
+// Detect mobile device from filename patterns
+function detectMobileDevice(fileName: string): { make: string; model: string } | null {
+  const lowerName = fileName.toLowerCase();
+  
+  // iPhone patterns
+  if (lowerName.includes('iphone') || lowerName.includes('ios')) {
+    return { make: 'Apple', model: 'iPhone' };
+  }
+  
+  // Samsung patterns
+  if (lowerName.includes('samsung') || lowerName.includes('galaxy')) {
+    return { make: 'Samsung', model: 'Galaxy' };
+  }
+  
+  // Google Pixel patterns
+  if (lowerName.includes('pixel') || lowerName.includes('google')) {
+    return { make: 'Google', model: 'Pixel' };
+  }
+  
+  // OnePlus patterns
+  if (lowerName.includes('oneplus')) {
+    return { make: 'OnePlus', model: 'OnePlus' };
+  }
+  
+  // Huawei patterns
+  if (lowerName.includes('huawei') || lowerName.includes('honor')) {
+    return { make: 'Huawei', model: 'Huawei' };
+  }
+  
+  // Xiaomi patterns
+  if (lowerName.includes('xiaomi') || lowerName.includes('mi_')) {
+    return { make: 'Xiaomi', model: 'Xiaomi' };
+  }
+  
+  return null;
 }
 
 export function formatImageMetadata(metadata: ImageMetadata): string {

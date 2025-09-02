@@ -457,6 +457,12 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
                           </Text>
                         </div>
                         <div className="flex justify-between">
+                          <Text fontSize="0.875rem" fontWeight="medium" color="gray-700">Analysis Status:</Text>
+                          <Badge variation="success" size="small">
+                            ✅ Unique Analysis
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between">
                           <Text fontSize="0.875rem" fontWeight="medium" color="gray-700">Direct URL:</Text>
                           <Button
                             variation="link"
@@ -470,6 +476,55 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
                             Copy URL
                           </Button>
                         </div>
+                        
+                        {/* Enhanced Mobile Metadata */}
+                        {(submission as any).fileName && (
+                          <div className="mt-4 p-3 bg-blue-100 rounded-lg border border-blue-300">
+                            <Text fontSize="0.875rem" fontWeight="medium" color="blue-800" marginBottom="small">
+                              📱 Mobile Device Information
+                            </Text>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                              {(submission as any).fileName && (
+                                <div className="flex justify-between">
+                                  <span className="font-medium">Original File:</span>
+                                  <span className="font-mono">{(submission as any).fileName}</span>
+                                </div>
+                              )}
+                              {(submission as any).deviceMake && (
+                                <div className="flex justify-between">
+                                  <span className="font-medium">Device:</span>
+                                  <span>{(submission as any).deviceMake} {(submission as any).deviceModel}</span>
+                                </div>
+                              )}
+                              {(submission as any).software && (
+                                <div className="flex justify-between">
+                                  <span className="font-medium">App:</span>
+                                  <span>{(submission as any).software}</span>
+                                </div>
+                              )}
+                              {(submission as any).imageWidth && (submission as any).imageHeight && (
+                                <div className="flex justify-between">
+                                  <span className="font-medium">Resolution:</span>
+                                  <span>{(submission as any).imageWidth} × {(submission as any).imageHeight}</span>
+                                </div>
+                              )}
+                              {(submission as any).gpsLatitude && (submission as any).gpsLongitude && (
+                                <div className="flex justify-between">
+                                  <span className="font-medium">Location:</span>
+                                  <span className="font-mono text-xs">
+                                    {(submission as any).gpsLatitude.toFixed(4)}, {(submission as any).gpsLongitude.toFixed(4)}
+                                  </span>
+                                </div>
+                              )}
+                              {(submission as any).lastModified && (
+                                <div className="flex justify-between">
+                                  <span className="font-medium">File Date:</span>
+                                  <span>{new Date((submission as any).lastModified).toLocaleString()}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

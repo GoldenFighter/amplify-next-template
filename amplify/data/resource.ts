@@ -80,6 +80,17 @@ const schema = a.schema({
       submissionDate: a.datetime().required(), // Date of submission for frequency tracking
       isDeleted: a.boolean().default(false), // Soft delete for submissions
       isProcessed: a.boolean().default(false), // Whether AI has processed this image
+      // Image metadata fields
+      fileName: a.string(), // Original filename
+      lastModified: a.datetime(), // File last modified date
+      deviceMake: a.string(), // Device make (from EXIF)
+      deviceModel: a.string(), // Device model (from EXIF)
+      software: a.string(), // Software used (from EXIF)
+      gpsLatitude: a.float(), // GPS latitude (from EXIF)
+      gpsLongitude: a.float(), // GPS longitude (from EXIF)
+      imageWidth: a.integer(), // Image width in pixels
+      imageHeight: a.integer(), // Image height in pixels
+      orientation: a.integer(), // Image orientation (from EXIF)
     })
     .authorization(allow => [
       allow.owner(), // Submitter can do everything

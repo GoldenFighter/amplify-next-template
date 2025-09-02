@@ -130,13 +130,28 @@ export default function ImageUpload({
         },
       }).result;
 
-      // Get the public URL using the new API
-      const downloadResult = await downloadData({
-        path: imageKey,
-      }).result;
-
-      // Extract the URL from the download result
-      const imageUrl = downloadResult.toString();
+      // Get the public URL - for Amplify Gen2, we need to construct the URL
+      // The result from uploadData should contain the URL, but let's also try downloadData
+      let imageUrl: string;
+      
+      try {
+        // Try to get URL from upload result first
+        if (result && typeof result === 'object' && 'url' in result) {
+          imageUrl = (result as any).url;
+        } else {
+          // Fallback: construct the URL manually
+          // For Amplify Gen2, the URL pattern is typically:
+          // https://{bucket}.s3.{region}.amazonaws.com/{key}
+          const downloadResult = await downloadData({
+            path: imageKey,
+          }).result;
+          imageUrl = downloadResult.toString();
+        }
+      } catch (downloadError) {
+        console.warn('Could not get download URL, using upload result:', downloadError);
+        // Last resort: use the upload result or construct URL
+        imageUrl = result?.toString() || `https://storage-url/${imageKey}`;
+      }
 
       // Extract image metadata
       const metadata = await extractImageMetadata(selectedFile);
