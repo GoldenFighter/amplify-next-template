@@ -68,11 +68,14 @@ export default function ImageAnalyzer({
 
   const uploadImage = async (file: File): Promise<string> => {
     try {
-      // Use the same pattern as contest-submissions to ensure permissions work
-      const fileName = `contest-submissions/image-analysis/${Date.now()}-${file.name}`;
+      // Use the same pattern as the existing ImageUpload component
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substring(2, 15);
+      const fileExtension = file.name.split('.').pop();
+      const imageKey = `contest-submissions/image-analysis/${timestamp}-${randomId}.${fileExtension}`;
       
       const result = await uploadData({
-        key: fileName,
+        path: imageKey,
         data: file,
         options: {
           contentType: file.type,
@@ -81,7 +84,7 @@ export default function ImageAnalyzer({
 
       // Get the public URL for the uploaded file
       const urlResult = await getUrl({
-        key: result.key,
+        path: result.path,
         options: {
           expiresIn: 3600, // 1 hour
         },
