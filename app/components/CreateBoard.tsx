@@ -19,6 +19,7 @@ import {
   Heading,
   SwitchField,
   Input,
+  Alert,
 } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 
@@ -30,6 +31,8 @@ interface CreateBoardProps {
 
 export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: CreateBoardProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -54,6 +57,7 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
 
     try {
       // Parse allowed emails from comma-separated string
@@ -120,7 +124,7 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
       onBoardCreated();
     } catch (error: any) {
       console.error("Error creating board:", error);
-      alert(`Failed to create board: ${error.message || "Unknown error"}`);
+      setError(`Failed to create board: ${error.message || "Unknown error"}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -139,15 +143,21 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
       {isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <Card className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <Flex direction="column" gap="1.5rem">
+            <Flex direction="column" gap="large">
               <Heading level={2}>Create New Contest Board</Heading>
               
               <form onSubmit={handleSubmit}>
-                <Flex direction="column" gap="1.5rem">
+                <Flex direction="column" gap="large">
+                  {/* Error Display */}
+                  {error && (
+                    <Alert variation="error" isDismissible onClose={() => setError(null)}>
+                      {error}
+                    </Alert>
+                  )}
                   {/* Basic Information */}
                   <div>
-                    <Heading level={4} marginBottom="0.5rem">📋 Basic Information</Heading>
-                    <Flex direction="column" gap="1rem">
+                    <Heading level={4} marginBottom="small">📋 Basic Information</Heading>
+                    <Flex direction="column" gap="medium">
                       <TextField
                         label="Board Name *"
                         placeholder="Enter board name"
@@ -168,8 +178,8 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
 
                   {/* Contest Details */}
                   <div>
-                    <Heading level={4} marginBottom="0.5rem">🎯 Contest Details</Heading>
-                    <Flex direction="column" gap="1rem">
+                    <Heading level={4} marginBottom="small">🎯 Contest Details</Heading>
+                    <Flex direction="column" gap="medium">
                       <TextField
                         label="Contest Type"
                         placeholder="e.g., Boy Names, Recipes, Designs"
@@ -205,29 +215,29 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
 
                   {/* Board Settings */}
                   <div>
-                    <Heading level={4} marginBottom="0.5rem">⚙️ Board Settings</Heading>
-                    <Flex direction="column" gap="1rem">
-                      <Flex gap="1rem" wrap="wrap">
-                        <div className="flex-1 min-w-[200px]">
+                    <Heading level={4} marginBottom="small">⚙️ Board Settings</Heading>
+                    <Flex direction="column" gap="medium">
+                      <Flex gap="medium" wrap="wrap">
+                        <Flex direction="column" gap="small" className="flex-1 min-w-[250px]">
                           <SwitchField
                             label="Public Board"
                             checked={formData.isPublic}
                             onChange={(e) => setFormData({ ...formData, isPublic: e.target.checked })}
                             descriptiveText="Visible to all users"
                           />
-                        </div>
-                        <div className="flex-1 min-w-[200px]">
+                        </Flex>
+                        <Flex direction="column" gap="small" className="flex-1 min-w-[250px]">
                           <SwitchField
                             label="Active Board"
                             checked={formData.isActive}
                             onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                             descriptiveText="Can accept submissions"
                           />
-                        </div>
+                        </Flex>
                       </Flex>
 
-                      <Flex gap="1rem" wrap="wrap">
-                        <div className="flex-1 min-w-[200px]">
+                      <Flex gap="medium" wrap="wrap">
+                        <Flex direction="column" gap="small" className="flex-1 min-w-[250px]">
                           <TextField
                             type="number"
                             label="Max Submissions Per User"
@@ -235,20 +245,22 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
                             max={10}
                             value={formData.maxSubmissionsPerUser.toString()}
                             onChange={(e) => setFormData({ ...formData, maxSubmissionsPerUser: parseInt(e.target.value) })}
+                            descriptiveText="Maximum submissions allowed per user"
                           />
-                        </div>
-                        <div className="flex-1 min-w-[200px]">
+                        </Flex>
+                        <Flex direction="column" gap="small" className="flex-1 min-w-[250px]">
                           <SelectField
                             label="Submission Frequency"
                             value={formData.submissionFrequency}
                             onChange={(e) => setFormData({ ...formData, submissionFrequency: e.target.value as any })}
+                            descriptiveText="How often users can submit"
                           >
                             <option value="unlimited">Unlimited</option>
                             <option value="daily">Daily</option>
                             <option value="weekly">Weekly</option>
                             <option value="monthly">Monthly</option>
                           </SelectField>
-                        </div>
+                        </Flex>
                       </Flex>
 
                       <TextField
@@ -274,8 +286,8 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
 
                   {/* Image Submission Settings */}
                   <div>
-                    <Heading level={4} marginBottom="0.5rem">📸 Image Submission Settings</Heading>
-                    <Flex direction="column" gap="1rem">
+                    <Heading level={4} marginBottom="small">📸 Image Submission Settings</Heading>
+                    <Flex direction="column" gap="medium">
                       <SwitchField
                         label="Allow Image Submissions"
                         checked={formData.allowImageSubmissions}
@@ -284,8 +296,8 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
                       />
 
                       {formData.allowImageSubmissions && (
-                        <Flex gap="1rem" wrap="wrap">
-                          <div className="flex-1 min-w-[200px]">
+                        <Flex gap="medium" wrap="wrap">
+                          <Flex direction="column" gap="small" className="flex-1 min-w-[250px]">
                             <TextField
                               type="number"
                               label="Max Image Size (MB)"
@@ -295,8 +307,8 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
                               onChange={(e) => setFormData({ ...formData, maxImageSize: parseInt(e.target.value) * 1024 * 1024 })}
                               descriptiveText="Maximum file size in megabytes"
                             />
-                          </div>
-                          <div className="flex-1 min-w-[200px]">
+                          </Flex>
+                          <Flex direction="column" gap="small" className="flex-1 min-w-[250px]">
                             <TextField
                               label="Allowed Image Types"
                               placeholder="image/jpeg, image/png, image/gif"
@@ -304,13 +316,13 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
                               onChange={(e) => setFormData({ ...formData, allowedImageTypes: e.target.value })}
                               descriptiveText="MIME types (comma-separated)"
                             />
-                          </div>
+                          </Flex>
                         </Flex>
                       )}
                     </Flex>
                   </div>
 
-              <Flex gap="1rem" justifyContent="space-between">
+              <Flex gap="medium" justifyContent="space-between" marginTop="large">
                 <Button
                   type="submit"
                   disabled={isSubmitting}
