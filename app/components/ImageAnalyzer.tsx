@@ -68,7 +68,8 @@ export default function ImageAnalyzer({
 
   const uploadImage = async (file: File): Promise<string> => {
     try {
-      const fileName = `image-analysis/${Date.now()}-${file.name}`;
+      // Use the same pattern as contest-submissions to ensure permissions work
+      const fileName = `contest-submissions/image-analysis/${Date.now()}-${file.name}`;
       
       const result = await uploadData({
         key: fileName,
