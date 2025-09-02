@@ -397,7 +397,7 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
                   <ImageDisplay
                     imageKey={submission.imageKey}
                     alt="Submission"
-                    className="w-full h-auto max-h-80 rounded-xl border border-gray-200 shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+                    className="w-full h-auto max-h-48 sm:max-h-56 md:max-h-64 rounded-lg border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer object-cover"
                     onClick={() => {
                       // Open image in new tab for full view
                       if (submission.imageUrl) {
@@ -733,13 +733,14 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
   );
 
   return (
-    <Flex direction="column" gap="1.5rem">
+    <div className="w-full overflow-x-hidden">
+      <Flex direction="column" gap="1rem sm:gap-1.5rem">
       {/* Header */}
-      <Flex justifyContent="space-between" alignItems="center" wrap="wrap">
-        <Heading level={3}>Submissions ({filteredAndSortedSubmissions.length})</Heading>
-        <Flex alignItems="center" gap="1rem">
+      <Flex direction="column" gap="1rem" className="sm:flex-row sm:justify-between sm:items-center">
+        <Heading level={3} className="text-lg sm:text-xl">Submissions ({filteredAndSortedSubmissions.length})</Heading>
+        <Flex alignItems="center" gap="1rem" wrap="wrap">
           {contestType && (
-            <Text fontSize="0.875rem" color="gray-600">{contestType} Contest</Text>
+            <Text fontSize="0.75rem sm:0.875rem" color="gray-600">{contestType} Contest</Text>
           )}
           
           {/* View Mode Toggle */}
@@ -748,7 +749,7 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
               variation={viewMode === 'list' ? 'primary' : 'link'}
               size="small"
               onClick={() => setViewMode('list')}
-              className="px-3 py-1"
+              className="px-2 sm:px-3 py-1 text-xs sm:text-sm"
             >
               📋 List
             </Button>
@@ -756,7 +757,7 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
               variation={viewMode === 'gallery' ? 'primary' : 'link'}
               size="small"
               onClick={() => setViewMode('gallery')}
-              className="px-3 py-1"
+              className="px-2 sm:px-3 py-1 text-xs sm:text-sm"
             >
               🖼️ Gallery
             </Button>
@@ -765,32 +766,34 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
       </Flex>
 
       {/* Search and Filters */}
-      <Flex direction="column" gap="1rem" className="sm:flex-row">
+      <Flex direction="column" gap="0.75rem" className="sm:flex-row sm:gap-1rem">
         <input
           type="text"
           placeholder="Search submissions..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1 p-2 border border-gray-300 rounded"
+          className="flex-1 p-2 sm:p-2 border border-gray-300 rounded text-sm sm:text-base"
         />
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value as any)}
-          className="p-2 border border-gray-300 rounded"
-        >
-          <option value="all">All Submissions</option>
-          <option value="mine">My Submissions</option>
-          <option value="others">Others' Submissions</option>
-        </select>
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as any)}
-          className="p-2 border border-gray-300 rounded"
-        >
-          <option value="date">Sort by Date</option>
-          <option value="rating">Sort by Rating</option>
-          <option value="user">Sort by User</option>
-        </select>
+        <Flex direction="column" gap="0.75rem" className="sm:flex-row sm:gap-1rem">
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as any)}
+            className="p-2 border border-gray-300 rounded text-sm sm:text-base"
+          >
+            <option value="all">All Submissions</option>
+            <option value="mine">My Submissions</option>
+            <option value="others">Others' Submissions</option>
+          </select>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="p-2 border border-gray-300 rounded text-sm sm:text-base"
+          >
+            <option value="date">Sort by Date</option>
+            <option value="rating">Sort by Rating</option>
+            <option value="user">Sort by User</option>
+          </select>
+        </Flex>
       </Flex>
 
       {/* Submissions Display */}
@@ -822,7 +825,7 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
         </Flex>
       ) : (
         /* Gallery View */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
           {rankedSubmissions.map((submission, index) => (
             <div key={submission.id} className="relative">
               <Card variation="outlined" className="hover:shadow-lg transition-shadow duration-300">
@@ -847,7 +850,7 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
                       <ImageDisplay
                         imageKey={submission.imageKey}
                         alt="Submission"
-                        className="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                        className="w-full h-32 sm:h-40 md:h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                         onClick={() => {
                           if (submission.imageUrl) {
                             window.open(submission.imageUrl, '_blank');
@@ -919,6 +922,7 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
           ))}
         </div>
       )}
-    </Flex>
+      </Flex>
+    </div>
   );
 }

@@ -560,7 +560,7 @@ export default function BoardPage() {
   const boardActive = isBoardActive(board);
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-8">
+    <main className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-8 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <button
@@ -570,20 +570,20 @@ export default function BoardPage() {
           ← Back to Boards
         </button>
         
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{board.name}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{board.name}</h1>
             {board.contestType && (
-              <p className="text-xl text-blue-600 font-semibold mb-2">{board.contestType}</p>
+              <p className="text-lg sm:text-xl text-blue-600 font-semibold mb-2">{board.contestType}</p>
             )}
             {board.contestPrompt && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-3">
-                <p className="text-lg text-blue-800 font-medium mb-2">Contest Question:</p>
-                <p className="text-blue-700 text-lg">{board.contestPrompt}</p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-3">
+                <p className="text-base sm:text-lg text-blue-800 font-medium mb-2">Contest Question:</p>
+                <p className="text-blue-700 text-sm sm:text-lg">{board.contestPrompt}</p>
               </div>
             )}
             {board.description && (
-              <p className="text-gray-600 text-lg">{board.description}</p>
+              <p className="text-gray-600 text-sm sm:text-lg">{board.description}</p>
             )}
             {board.judgingCriteria && board.judgingCriteria.length > 0 && (
               <div className="mt-3">
@@ -636,10 +636,10 @@ export default function BoardPage() {
 
       {/* Submission Controls */}
       {boardActive ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Submit New Entry</h2>
-            <div className="text-sm text-gray-600">
+        <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+            <h2 className="text-lg sm:text-xl font-semibold">Submit New Entry</h2>
+            <div className="text-xs sm:text-sm text-gray-600">
               {submissionLimit.currentCount} / {submissionLimit.maxAllowed} submissions used
             </div>
           </div>
