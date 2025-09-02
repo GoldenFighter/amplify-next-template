@@ -14,8 +14,75 @@ import {
   Collection,
   Loader,
 } from '@aws-amplify/ui-react';
+import { getUrl } from 'aws-amplify/storage';
 import '@aws-amplify/ui-react/styles.css';
 import { getDisplayName } from "../../lib/utils";
+
+// Custom ImageDisplay component that uses Amplify Storage
+const ImageDisplay = ({ imageKey, alt, className, onClick, fallbackSrc }: {
+  imageKey: string;
+  alt: string;
+  className?: string;
+  onClick?: () => void;
+  fallbackSrc?: string;
+}) => {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    const loadImage = async () => {
+      try {
+        setLoading(true);
+        setError(false);
+        
+        const urlResult = await getUrl({
+          path: imageKey,
+          options: {
+            expiresIn: 3600, // URL expires in 1 hour
+          },
+        });
+        
+        setImageUrl(urlResult.url.toString());
+      } catch (err) {
+        console.error('Error loading image:', err);
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (imageKey) {
+      loadImage();
+    }
+  }, [imageKey]);
+
+  if (loading) {
+    return (
+      <div className={`${className} bg-gray-200 flex items-center justify-center`}>
+        <div className="text-gray-500 text-sm">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error || !imageUrl) {
+    return (
+      <div className={`${className} bg-gray-200 flex items-center justify-center`}>
+        <div className="text-gray-500 text-sm">Image not available</div>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={imageUrl}
+      alt={alt}
+      className={className}
+      onClick={onClick}
+      onError={() => setError(true)}
+    />
+  );
+};
 
 interface Submission {
   id: string;
@@ -324,16 +391,18 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
             </Text>
             
             {/* Enhanced Image Display */}
-            {submission.hasImage && submission.imageUrl && (
+            {submission.hasImage && submission.imageKey && (
               <div className="mt-3 mb-4">
                 <div className="relative group">
-                  <img 
-                    src={submission.imageUrl} 
-                    alt="Submission" 
+                  <ImageDisplay
+                    imageKey={submission.imageKey}
+                    alt="Submission"
                     className="w-full h-auto max-h-80 rounded-xl border border-gray-200 shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer"
                     onClick={() => {
                       // Open image in new tab for full view
-                      window.open(submission.imageUrl, '_blank');
+                      if (submission.imageUrl) {
+                        window.open(submission.imageUrl, '_blank');
+                      }
                     }}
                   />
                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -773,13 +842,17 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
                   </div>
 
                   {/* Image or Text Content */}
-                  {submission.hasImage && submission.imageUrl ? (
+                  {submission.hasImage && submission.imageKey ? (
                     <div className="relative">
-                      <img 
-                        src={submission.imageUrl} 
-                        alt="Submission" 
+                      <ImageDisplay
+                        imageKey={submission.imageKey}
+                        alt="Submission"
                         className="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => window.open(submission.imageUrl, '_blank')}
+                        onClick={() => {
+                          if (submission.imageUrl) {
+                            window.open(submission.imageUrl, '_blank');
+                          }
+                        }}
                       />
                       <div className="absolute bottom-2 left-2 right-2">
                         <div className="bg-black bg-opacity-50 text-white text-xs p-2 rounded">

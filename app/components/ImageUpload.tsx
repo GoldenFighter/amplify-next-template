@@ -11,7 +11,7 @@ import {
   Badge,
   Divider,
 } from '@aws-amplify/ui-react';
-import { uploadData, downloadData } from 'aws-amplify/storage';
+import { uploadData, getUrl } from 'aws-amplify/storage';
 import { extractImageMetadata, ImageMetadata } from '../../lib/imageMetadata';
 
 interface ImageUploadProps {
@@ -130,27 +130,27 @@ export default function ImageUpload({
         },
       }).result;
 
-      // Get the public URL - for Amplify Gen2, we need to construct the URL
-      // The result from uploadData should contain the URL, but let's also try downloadData
+      // Get the public URL using the proper Amplify Gen2 Storage API
       let imageUrl: string;
       
       try {
-        // Try to get URL from upload result first
+        // Use getUrl to get the proper public URL for the uploaded file
+        const urlResult = await getUrl({
+          path: imageKey,
+          options: {
+            expiresIn: 3600, // URL expires in 1 hour
+          },
+        });
+        imageUrl = urlResult.url.toString();
+      } catch (urlError) {
+        console.warn('Could not get URL from Storage:', urlError);
+        // Fallback: try to construct URL from upload result
         if (result && typeof result === 'object' && 'url' in result) {
           imageUrl = (result as any).url;
         } else {
-          // Fallback: construct the URL manually
-          // For Amplify Gen2, the URL pattern is typically:
-          // https://{bucket}.s3.{region}.amazonaws.com/{key}
-          const downloadResult = await downloadData({
-            path: imageKey,
-          }).result;
-          imageUrl = downloadResult.toString();
+          // Last resort: construct a placeholder URL
+          imageUrl = `https://storage-url/${imageKey}`;
         }
-      } catch (downloadError) {
-        console.warn('Could not get download URL, using upload result:', downloadError);
-        // Last resort: use the upload result or construct URL
-        imageUrl = result?.toString() || `https://storage-url/${imageKey}`;
       }
 
       // Extract image metadata
