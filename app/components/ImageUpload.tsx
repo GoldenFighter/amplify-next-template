@@ -121,8 +121,10 @@ export default function ImageUpload({
         options: {
           contentType: selectedFile.type,
           onProgress: (progress) => {
-            const percentage = Math.round((progress.transferredBytes / progress.totalBytes) * 100);
-            setUploadProgress(percentage);
+            if (progress.totalBytes) {
+              const percentage = Math.round((progress.transferredBytes / progress.totalBytes) * 100);
+              setUploadProgress(percentage);
+            }
           },
         },
       }).result;
