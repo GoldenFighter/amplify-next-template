@@ -9,7 +9,6 @@ import { Button } from "@aws-amplify/ui-react";
 
 import SubmissionsView from "../../components/SubmissionsView";
 import ImageUpload from "../../components/ImageUpload";
-import ConversationJudging from "../../components/ConversationJudging";
 import { Amplify } from "aws-amplify";
 import outputs from "../../../amplify_outputs.json";
 
@@ -925,36 +924,16 @@ export default function BoardPage() {
               {/* Image Submission Only */}
               {board.allowImageSubmissions ? (
                 <div className="border border-gray-200 rounded-lg p-4">
-                  <h3 className="text-lg font-medium mb-3">
-                    {board.useConversationJudging ? "🤖 AI Conversation Judging" : "📸 Image Submission"}
-                  </h3>
-                  
-                  {board.useConversationJudging ? (
-                    <ConversationJudging
-                      boardId={board.id}
-                      boardName={board.name}
-                      contestType={board.contestType || ""}
-                      contestPrompt={board.contestPrompt || ""}
-                      judgingCriteria={board.judgingCriteria?.filter(c => c !== null) as string[] || []}
-                      maxScore={board.maxScore || 100}
-                      userEmail={loginId}
-                      onSubmissionComplete={(result) => {
-                        alert("Image judged successfully! Check the submissions below.");
-                        window.location.reload();
-                      }}
-                      onError={(error) => alert(error)}
-                    />
-                  ) : (
-                    <ImageUpload
-                      boardId={board.id}
-                      boardName={board.name}
-                      userEmail={loginId}
-                      maxImageSize={board.maxImageSize || 5242880}
-                      allowedImageTypes={board.allowedImageTypes?.filter(t => t !== null) as string[] || ['image/jpeg', 'image/png', 'image/gif']}
-                      onImageUploaded={handleImageUpload}
-                      onError={(error) => alert(error)}
-                    />
-                  )}
+                  <h3 className="text-lg font-medium mb-3">📸 Image Submission</h3>
+                  <ImageUpload
+                    boardId={board.id}
+                    boardName={board.name}
+                    userEmail={loginId}
+                    maxImageSize={board.maxImageSize || 5242880}
+                    allowedImageTypes={board.allowedImageTypes?.filter(t => t !== null) as string[] || ['image/jpeg', 'image/png', 'image/gif']}
+                    onImageUploaded={handleImageUpload}
+                    onError={(error) => alert(error)}
+                  />
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">

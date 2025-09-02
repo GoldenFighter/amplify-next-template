@@ -39,7 +39,6 @@ const schema = a.schema({
       allowImageSubmissions: a.boolean().default(false), // Whether this board accepts image submissions
       maxImageSize: a.integer().default(5242880), // 5MB default
       allowedImageTypes: a.string().array(), // Allowed image formats
-      useConversationJudging: a.boolean().default(false), // Demo feature for conversation-based judging
     })
     .authorization(allow => [
       allow.owner(), // Creator can do everything
@@ -160,25 +159,27 @@ const schema = a.schema({
     .returns(a.ref('ScoredResponse'))
     .authorization(allow => allow.authenticated()),
 
-  // AI Conversation for persistent judging context
-  ContestConversation: a
+
+  // Standalone AI Conversation for image judging
+  ConversationSession: a
     .model({
-      boardId: a.string().required(),
-      boardName: a.string().required(),
-      contestType: a.string().required(),
-      contestPrompt: a.string().required(),
-      judgingCriteria: a.string().array().required(),
-      maxScore: a.integer().required(),
+      name: a.string().required(), // User-friendly name for the conversation
+      description: a.string(), // Description of what this conversation judges
+      contestType: a.string().required(), // Type of contest (e.g., "Cute Cats", "Landscapes")
+      contestPrompt: a.string().required(), // The contest prompt/description
+      judgingCriteria: a.string().array().required(), // Criteria for judging
+      maxScore: a.integer().default(100), // Maximum score
       conversationId: a.string(), // Amplify conversation ID
-      isActive: a.boolean().default(true),
-      totalSubmissions: a.integer().default(0),
-      averageScore: a.float(),
-      lastSubmissionDate: a.datetime(),
-      ownerEmail: a.string().required(),
+      isActive: a.boolean().default(true), // Whether the conversation is active
+      totalSubmissions: a.integer().default(0), // Total number of submissions
+      averageScore: a.float(), // Average score across all submissions
+      lastSubmissionDate: a.datetime(), // When the last submission was made
+      createdBy: a.string().required(), // Who created this conversation
+      isPublic: a.boolean().default(false), // Whether others can use this conversation
     })
     .authorization(allow => [
-      allow.owner(), // Owner can do everything
-      allow.authenticated().to(['read']), // All authenticated users can read
+      allow.owner(), // Creator can do everything
+      allow.authenticated().to(['read']), // All authenticated users can read public conversations
     ]),
 
   // Legacy Analysis model - keeping for backward compatibility

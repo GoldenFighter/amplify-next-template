@@ -45,7 +45,6 @@ interface FormData {
   allowImageSubmissions: boolean;
   maxImageSize: number;
   allowedImageTypes: string;
-  useConversationJudging: boolean; // Demo feature flag
 }
 
 export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: CreateBoardProps) {
@@ -68,7 +67,6 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
     allowImageSubmissions: false,
     maxImageSize: 5242880, // 5MB
     allowedImageTypes: "image/jpeg,image/png,image/gif",
-    useConversationJudging: false, // New option for conversation-based judging
   });
 
   if (!isAdmin) return null;
@@ -119,7 +117,6 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
         allowImageSubmissions: formData.allowImageSubmissions,
         maxImageSize: formData.maxImageSize,
         allowedImageTypes: allowedImageTypes.length > 0 ? allowedImageTypes : null,
-        useConversationJudging: formData.useConversationJudging,
       });
 
       // Reset form and close modal
@@ -139,7 +136,6 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
         allowImageSubmissions: false,
         maxImageSize: 5242880,
         allowedImageTypes: "image/jpeg,image/png,image/gif",
-        useConversationJudging: false, // Reset conversation judging flag
       });
       setIsOpen(false);
       onBoardCreated();
@@ -349,23 +345,6 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
                             />
                           </Flex>
                         </Flex>
-                      )}
-
-                      <SwitchField
-                        label="🤖 Use AI Conversation Judging (Demo)"
-                        checked={formData.useConversationJudging}
-                        onChange={(e) => setFormData({ ...formData, useConversationJudging: e.target.checked })}
-                        descriptiveText="Enable persistent AI conversation that learns from previous submissions for more contextual judging"
-                        isDisabled={!formData.allowImageSubmissions}
-                      />
-
-                      {formData.useConversationJudging && (
-                        <Alert variation="info">
-                          <div style={{ fontSize: '0.875rem' }}>
-                            <strong>Demo Feature:</strong> This board will use a persistent AI conversation that maintains context across submissions. 
-                            The AI will learn from previous judgments to provide more consistent and contextual scoring.
-                          </div>
-                        </Alert>
                       )}
                     </Flex>
                   </div>
