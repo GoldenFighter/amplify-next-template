@@ -144,9 +144,9 @@ const schema = a.schema({
 
   // AI generation for image-based contest judging
   scoreImageContest: a.generation({
-    aiModel: a.ai.model('Claude 3 Haiku'),
-    systemPrompt: 'You are an expert contest judge specializing in image evaluation. You will be given a contest type, prompt, judging criteria, and an image description. Rate the image submission based on the criteria and return a JSON object with: rating (integer based on maxScore), summary (string), reasoning (string), risks (array of strings), recommendations (array of strings). Be strict and consistent in your judging. Consider visual appeal, creativity, technical skill, and adherence to contest requirements. Return only valid JSON.',
-    inferenceConfiguration: { temperature: 0.1, topP: 0.1, maxTokens: 1000 },
+    aiModel: a.ai.model('Claude 3.5 Sonnet'),
+    systemPrompt: 'You are an expert contest judge specializing in image evaluation. You will be given a detailed analysis of an image and contest criteria. CRITICAL: You must base your rating ONLY on what is actually described in the image analysis. If the image analysis indicates the image does not contain the required subject matter (e.g., a "cute cats" contest but the image shows dogs, walls, or other non-cat content), you MUST give a very low score (0-20 out of 100). Do not make assumptions or rate based on what you think might be in the image. Only rate what is explicitly described in the analysis. Return a JSON object with: rating (integer based on maxScore), summary (string), reasoning (string), risks (array of strings), recommendations (array of strings). Be extremely strict about matching contest requirements. Return only valid JSON.',
+    inferenceConfiguration: { temperature: 0.1, topP: 0.1, maxTokens: 1500 },
   })
     .arguments({
       imageDescription: a.string().required(), // Description of the image content

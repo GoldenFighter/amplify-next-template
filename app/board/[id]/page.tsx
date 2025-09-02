@@ -15,32 +15,31 @@ if (!Amplify.getConfig().Auth) {
   Amplify.configure(outputs);
 }
 
-// Function to analyze image content and create a unique description
+// Function to analyze image content and create a detailed description for AI
 async function analyzeImageContent(imageUrl: string, imageType: string, imageSize: number, userPrompt?: string): Promise<string> {
   try {
-    // Create a unique identifier for this image based on its content
-    const imageHash = await generateImageHash(imageUrl);
+    // Get detailed image information
+    const imageInfo = await getDetailedImageInfo(imageUrl);
     
-    // Get basic image information
-    const imageInfo = await getImageInfo(imageUrl);
-    
-    // Create a comprehensive description that will be unique for each image
+    // Create a comprehensive description that focuses on what's actually in the image
     const description = [
-      `Image Analysis ID: ${imageHash}`,
-      `Technical Details: ${imageType}, ${Math.round(imageSize / 1024)}KB, ${imageInfo.width}×${imageInfo.height}px`,
-      `Content Analysis: ${imageInfo.description}`,
-      `Color Palette: ${imageInfo.colors}`,
+      `DETAILED IMAGE ANALYSIS:`,
+      `Image contains: ${imageInfo.contentDescription}`,
+      `Main subjects: ${imageInfo.subjects}`,
+      `Visual elements: ${imageInfo.visualElements}`,
+      `Color scheme: ${imageInfo.colors}`,
       `Composition: ${imageInfo.composition}`,
-      userPrompt ? `User Description: ${userPrompt}` : 'No user description provided',
-      `Upload Timestamp: ${new Date().toISOString()}`,
-    ].join('. ');
+      `Technical quality: ${imageInfo.quality}`,
+      `Image dimensions: ${imageInfo.width}×${imageInfo.height}px`,
+      `File details: ${imageType}, ${Math.round(imageSize / 1024)}KB`,
+      userPrompt ? `User provided context: ${userPrompt}` : 'No additional context provided',
+    ].join(' ');
     
     return description;
   } catch (error) {
     console.error('Error analyzing image:', error);
-    // Fallback to a unique description based on timestamp and random data
-    const fallbackId = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-    return `Image Analysis ID: ${fallbackId}. Technical Details: ${imageType}, ${Math.round(imageSize / 1024)}KB. User Description: ${userPrompt || 'No description provided'}. Upload Timestamp: ${new Date().toISOString()}`;
+    // Fallback with basic info
+    return `Image Analysis Error. File: ${imageType}, ${Math.round(imageSize / 1024)}KB. User context: ${userPrompt || 'None provided'}. Please analyze the actual image content carefully.`;
   }
 }
 
@@ -61,13 +60,16 @@ async function generateImageHash(imageUrl: string): Promise<string> {
   }
 }
 
-// Get basic image information
-async function getImageInfo(imageUrl: string): Promise<{
+// Get detailed image information for better AI analysis
+async function getDetailedImageInfo(imageUrl: string): Promise<{
   width: number;
   height: number;
-  description: string;
+  contentDescription: string;
+  subjects: string;
+  visualElements: string;
   colors: string;
   composition: string;
+  quality: string;
 }> {
   return new Promise((resolve) => {
     const img = new Image();
@@ -84,34 +86,38 @@ async function getImageInfo(imageUrl: string): Promise<{
         if (ctx) {
           ctx.drawImage(img, 0, 0);
           
-          // Get image data for color analysis
+          // Get image data for detailed analysis
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          
+          // Perform detailed analysis
           const colors = analyzeColors(imageData);
-          
-          // Analyze composition
           const composition = analyzeComposition(canvas.width, canvas.height);
-          
-          // Generate a basic description based on image properties
-          const description = generateImageDescription(canvas.width, canvas.height, colors);
+          const quality = analyzeImageQuality(imageData, canvas.width, canvas.height);
+          const subjects = analyzeSubjects(imageData, canvas.width, canvas.height);
+          const visualElements = analyzeVisualElements(imageData, canvas.width, canvas.height);
+          const contentDescription = generateDetailedDescription(canvas.width, canvas.height, colors, subjects, visualElements);
           
           resolve({
             width: canvas.width,
             height: canvas.height,
-            description,
+            contentDescription,
+            subjects,
+            visualElements,
             colors,
             composition,
+            quality,
           });
         } else {
-          resolve(getFallbackImageInfo());
+          resolve(getFallbackDetailedInfo());
         }
       } catch (error) {
         console.error('Error analyzing image:', error);
-        resolve(getFallbackImageInfo());
+        resolve(getFallbackDetailedInfo());
       }
     };
     
     img.onerror = () => {
-      resolve(getFallbackImageInfo());
+      resolve(getFallbackDetailedInfo());
     };
     
     img.src = imageUrl;
@@ -163,14 +169,149 @@ function generateImageDescription(width: number, height: number, colors: string)
   return `High-resolution image (${megapixels}MP) with ${width}×${height} dimensions. Dominant colors include ${colors}.`;
 }
 
-// Fallback image info when analysis fails
-function getFallbackImageInfo() {
+// Analyze image quality based on pixel data
+function analyzeImageQuality(imageData: ImageData, width: number, height: number): string {
+  const data = imageData.data;
+  let totalBrightness = 0;
+  let totalContrast = 0;
+  let pixelCount = 0;
+  
+  // Sample pixels for performance
+  for (let i = 0; i < data.length; i += 16) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const a = data[i + 3];
+    
+    if (a > 128) {
+      const brightness = (r + g + b) / 3;
+      totalBrightness += brightness;
+      pixelCount++;
+    }
+  }
+  
+  const avgBrightness = totalBrightness / pixelCount;
+  const resolution = width * height;
+  
+  let quality = 'Unknown';
+  if (resolution > 2000000) quality = 'High resolution';
+  else if (resolution > 500000) quality = 'Medium resolution';
+  else quality = 'Low resolution';
+  
+  if (avgBrightness < 50) quality += ', very dark';
+  else if (avgBrightness > 200) quality += ', very bright';
+  else quality += ', good lighting';
+  
+  return quality;
+}
+
+// Analyze potential subjects in the image
+function analyzeSubjects(imageData: ImageData, width: number, height: number): string {
+  const data = imageData.data;
+  let edgeCount = 0;
+  let colorVariation = 0;
+  let previousR = 0, previousG = 0, previousB = 0;
+  
+  // Sample pixels to detect edges and color variation
+  for (let i = 0; i < data.length; i += 20) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const a = data[i + 3];
+    
+    if (a > 128) {
+      // Detect edges by comparing with previous pixel
+      const edgeStrength = Math.abs(r - previousR) + Math.abs(g - previousG) + Math.abs(b - previousB);
+      if (edgeStrength > 50) edgeCount++;
+      
+      // Calculate color variation
+      colorVariation += Math.abs(r - g) + Math.abs(g - b) + Math.abs(b - r);
+      
+      previousR = r;
+      previousG = g;
+      previousB = b;
+    }
+  }
+  
+  let subjects = 'Unknown content';
+  if (edgeCount > 1000) subjects = 'Complex scene with many details';
+  else if (edgeCount > 500) subjects = 'Moderate detail level';
+  else subjects = 'Simple or uniform content';
+  
+  if (colorVariation > 10000) subjects += ', high color variation';
+  else if (colorVariation > 5000) subjects += ', moderate color variation';
+  else subjects += ', low color variation';
+  
+  return subjects;
+}
+
+// Analyze visual elements in the image
+function analyzeVisualElements(imageData: ImageData, width: number, height: number): string {
+  const data = imageData.data;
+  let totalPixels = 0;
+  let transparentPixels = 0;
+  let darkPixels = 0;
+  let brightPixels = 0;
+  
+  // Sample pixels for analysis
+  for (let i = 0; i < data.length; i += 12) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const a = data[i + 3];
+    
+    totalPixels++;
+    
+    if (a < 128) {
+      transparentPixels++;
+    } else {
+      const brightness = (r + g + b) / 3;
+      if (brightness < 85) darkPixels++;
+      else if (brightness > 170) brightPixels++;
+    }
+  }
+  
+  const transparency = (transparentPixels / totalPixels) * 100;
+  const darkness = (darkPixels / totalPixels) * 100;
+  const brightness = (brightPixels / totalPixels) * 100;
+  
+  let elements = '';
+  if (transparency > 10) elements += 'Transparent areas, ';
+  if (darkness > 30) elements += 'Dark areas, ';
+  if (brightness > 30) elements += 'Bright areas, ';
+  
+  elements += `Overall contrast level: ${darkness > 20 && brightness > 20 ? 'High' : 'Low'}`;
+  
+  return elements || 'Standard visual elements';
+}
+
+// Generate detailed description based on analysis
+function generateDetailedDescription(width: number, height: number, colors: string, subjects: string, visualElements: string): string {
+  const aspectRatio = width / height;
+  const megapixels = (width * height / 1000000).toFixed(1);
+  
+  let description = `Image with ${megapixels}MP resolution (${width}×${height}px)`;
+  
+  if (aspectRatio > 1.5) description += ', landscape orientation';
+  else if (aspectRatio < 0.7) description += ', portrait orientation';
+  else description += ', square or standard format';
+  
+  description += `. ${subjects}. Visual characteristics: ${visualElements}. Color palette: ${colors}`;
+  
+  return description;
+}
+
+// Fallback detailed info when analysis fails
+function getFallbackDetailedInfo() {
   return {
     width: 0,
     height: 0,
-    description: 'Image analysis unavailable',
-    colors: 'Unknown',
-    composition: 'Unknown format',
+    contentDescription: 'Image analysis unavailable - please examine the actual image content',
+    subjects: 'Unknown subjects',
+    visualElements: 'Unknown visual elements',
+    colors: 'Unknown colors',
+    composition: 'Unknown composition',
+    quality: 'Unknown quality',
   };
 }
 
@@ -653,20 +794,8 @@ export default function BoardPage() {
           
           {submissionLimit.canSubmit ? (
             <div className="space-y-4">
-              {/* Text Submission */}
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="text-lg font-medium mb-3">📝 Text Submission</h3>
-                <button
-                  onClick={handleScore}
-                  disabled={loadingScore}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {loadingScore ? "Generating..." : "Submit Text Entry"}
-                </button>
-              </div>
-
-              {/* Image Submission */}
-              {board.allowImageSubmissions && (
+              {/* Image Submission Only */}
+              {board.allowImageSubmissions ? (
                 <div className="border border-gray-200 rounded-lg p-4">
                   <h3 className="text-lg font-medium mb-3">📸 Image Submission</h3>
                   <ImageUpload
@@ -677,6 +806,11 @@ export default function BoardPage() {
                     onImageUploaded={handleImageUpload}
                     onError={(error) => alert(error)}
                   />
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>This board does not allow image submissions.</p>
+                  <p className="text-sm mt-2">Contact the board creator to enable image uploads.</p>
                 </div>
               )}
             </div>
