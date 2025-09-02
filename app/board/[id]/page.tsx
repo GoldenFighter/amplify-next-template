@@ -297,7 +297,7 @@ export default function BoardPage() {
     }
   };
 
-  const handleImageUpload = async (imageUrl: string, imageKey: string, imageSize: number, imageType: string) => {
+  const handleImageUpload = async (imageUrl: string, imageKey: string, imageSize: number, imageType: string, metadata?: any) => {
     if (!board) return;
     
     if (!isBoardActive(board)) {

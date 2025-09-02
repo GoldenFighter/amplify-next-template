@@ -35,6 +35,13 @@ interface Submission {
   updatedAt: string;
   submissionDate: string | null;
   isDeleted: boolean | null;
+  // For image submissions
+  hasImage?: boolean;
+  imageUrl?: string;
+  imageKey?: string;
+  imageSize?: number;
+  imageType?: string;
+  isProcessed?: boolean;
 }
 
 interface SubmissionsViewProps {
@@ -59,19 +66,67 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
 
   const fetchSubmissions = async () => {
     try {
-      const { data, errors } = await client.models.Submission.list({
+      // Fetch text submissions
+      const { data: textSubmissions, errors: textErrors } = await client.models.Submission.list({
         filter: { 
           boardId: { eq: boardId },
           isDeleted: { ne: true }
         }
       });
 
-      if (errors?.length) {
-        console.error("Error fetching submissions:", errors);
+      // Fetch image submissions
+      const { data: imageSubmissions, errors: imageErrors } = await client.models.ImageSubmission.list({
+        filter: { 
+          boardId: { eq: boardId },
+          isDeleted: { ne: true }
+        }
+      });
+
+      if (textErrors?.length || imageErrors?.length) {
+        console.error("Error fetching submissions:", textErrors || imageErrors);
         return;
       }
 
-      setSubmissions(data || []);
+      // Combine and normalize both types of submissions
+      const combinedSubmissions: Submission[] = [
+        // Text submissions (add hasImage: false)
+        ...(textSubmissions || []).map(sub => ({
+          ...sub,
+          hasImage: false,
+          imageUrl: undefined,
+          imageKey: undefined,
+          imageSize: undefined,
+          imageType: undefined,
+          isProcessed: undefined,
+        })),
+        // Image submissions (normalize to match Submission interface)
+        ...(imageSubmissions || []).map(sub => ({
+          id: sub.id,
+          boardId: sub.boardId,
+          prompt: sub.prompt || '',
+          context: sub.context,
+          result: sub.result || { rating: 0, summary: '', reasoning: '', risks: [], recommendations: [] },
+          ownerEmail: sub.ownerEmail,
+          boardName: sub.boardName,
+          createdAt: sub.submissionDate,
+          updatedAt: sub.submissionDate,
+          submissionDate: sub.submissionDate,
+          isDeleted: sub.isDeleted,
+          hasImage: true,
+          imageUrl: sub.imageUrl || undefined,
+          imageKey: sub.imageKey || undefined,
+          imageSize: sub.imageSize || undefined,
+          imageType: sub.imageType || undefined,
+          isProcessed: sub.isProcessed || undefined,
+        }))
+      ];
+
+      // Sort by creation date (newest first)
+      combinedSubmissions.sort((a, b) => 
+        new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()
+      );
+
+      setSubmissions(combinedSubmissions);
     } catch (error) {
       console.error("Error fetching submissions:", error);
     } finally {
@@ -132,10 +187,26 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
   const handleDelete = async (submissionId: string) => {
     if (confirm("Are you sure you want to delete this submission?")) {
       try {
-        await client.models.Submission.update({
-          id: submissionId,
-          isDeleted: true
-        });
+        // Find the submission to determine its type
+        const submission = submissions.find(s => s.id === submissionId);
+        if (!submission) {
+          alert("Submission not found");
+          return;
+        }
+
+        // Delete based on submission type
+        if (submission.hasImage) {
+          await client.models.ImageSubmission.update({
+            id: submissionId,
+            isDeleted: true
+          });
+        } else {
+          await client.models.Submission.update({
+            id: submissionId,
+            isDeleted: true
+          });
+        }
+        
         fetchSubmissions();
       } catch (error) {
         console.error("Error deleting submission:", error);
@@ -248,11 +319,32 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
           {/* Entry/Submission Prompt */}
           <div>
             <Text fontSize="0.875rem" fontWeight="medium" color="gray-700">
-              {contestType ? 'Entry' : 'Task'}:
+              {submission.hasImage ? 'Image Submission' : (contestType ? 'Entry' : 'Task')}:
             </Text>
-            <Text fontSize="0.875rem" color="gray-600">
-              {submission.prompt}
-            </Text>
+            
+            {/* Image Display */}
+            {submission.hasImage && submission.imageUrl && (
+              <div className="mt-2 mb-3">
+                <img 
+                  src={submission.imageUrl} 
+                  alt="Submission" 
+                  className="max-w-full h-auto max-h-64 rounded-lg border border-gray-200 shadow-sm"
+                />
+                <div className="mt-2 text-xs text-gray-500">
+                  {submission.imageType} • {Math.round((submission.imageSize || 0) / 1024)}KB
+                  {submission.isProcessed === false && (
+                    <Badge variation="warning" size="small" className="ml-2">Processing...</Badge>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Text Prompt */}
+            {submission.prompt && (
+              <Text fontSize="0.875rem" color="gray-600">
+                {submission.prompt}
+              </Text>
+            )}
           </div>
 
           {/* Expand/Collapse Button */}

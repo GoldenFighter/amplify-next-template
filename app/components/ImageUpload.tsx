@@ -12,13 +12,14 @@ import {
   Divider,
 } from '@aws-amplify/ui-react';
 import { uploadData, downloadData } from 'aws-amplify/storage';
+import { extractImageMetadata, ImageMetadata } from '../../lib/imageMetadata';
 
 interface ImageUploadProps {
   boardId: string;
   boardName: string;
   maxImageSize?: number;
   allowedImageTypes?: string[];
-  onImageUploaded: (imageUrl: string, imageKey: string, imageSize: number, imageType: string) => void;
+  onImageUploaded: (imageUrl: string, imageKey: string, imageSize: number, imageType: string, metadata?: ImageMetadata) => void;
   onError: (error: string) => void;
 }
 
@@ -137,8 +138,11 @@ export default function ImageUpload({
       // Extract the URL from the download result
       const imageUrl = downloadResult.toString();
 
+      // Extract image metadata
+      const metadata = await extractImageMetadata(selectedFile);
+
       // Call the callback with upload details
-      onImageUploaded(imageUrl, imageKey, selectedFile.size, selectedFile.type);
+      onImageUploaded(imageUrl, imageKey, selectedFile.size, selectedFile.type, metadata);
 
       // Reset state
       setSelectedFile(null);
