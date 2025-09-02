@@ -17,6 +17,7 @@ import { extractImageMetadata, ImageMetadata, validateImageForContest, getValida
 interface ImageUploadProps {
   boardId: string;
   boardName: string;
+  userEmail?: string;
   maxImageSize?: number;
   allowedImageTypes?: string[];
   onImageUploaded: (imageUrl: string, imageKey: string, imageSize: number, imageType: string, metadata?: ImageMetadata) => void;
@@ -26,6 +27,7 @@ interface ImageUploadProps {
 export default function ImageUpload({
   boardId,
   boardName,
+  userEmail,
   maxImageSize = 5242880, // 5MB default
   allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif'],
   onImageUploaded,
@@ -81,7 +83,7 @@ export default function ImageUpload({
       const extractedMetadata = await extractImageMetadata(file);
       setMetadata(extractedMetadata);
       
-      const validation = validateImageForContest(extractedMetadata);
+      const validation = validateImageForContest(extractedMetadata, userEmail);
       setValidationResult(validation);
       
       if (!validation.isValid) {
@@ -303,7 +305,7 @@ export default function ImageUpload({
                 <div className="w-full max-w-xs text-left">
                   <Alert variation={validationResult.isValid ? "success" : "error"}>
                     <Text fontSize="0.75rem" whiteSpace="pre-line">
-                      {getValidationReport(metadata)}
+                      {getValidationReport(metadata, userEmail)}
                     </Text>
                   </Alert>
                 </div>

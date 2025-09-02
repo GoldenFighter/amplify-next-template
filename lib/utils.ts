@@ -57,8 +57,8 @@ export const canSubmitToBoard = async (
   client: any
 ): Promise<{ canSubmit: boolean; currentCount: number; maxAllowed: number }> => {
   try {
-    // Get user's current submissions to this board (excluding deleted ones)
-    const { data: submissions } = await client.models.Submission.list({
+    // Get user's current text submissions to this board (excluding deleted ones)
+    const { data: textSubmissions } = await client.models.Submission.list({
       filter: {
         boardId: { eq: boardId },
         ownerEmail: { eq: userEmail },
@@ -66,7 +66,17 @@ export const canSubmitToBoard = async (
       }
     });
 
-    const currentCount = submissions?.length || 0;
+    // Get user's current image submissions to this board (excluding deleted ones)
+    const { data: imageSubmissions } = await client.models.ImageSubmission.list({
+      filter: {
+        boardId: { eq: boardId },
+        ownerEmail: { eq: userEmail },
+        isDeleted: { ne: true }
+      }
+    });
+
+    // Combine both types of submissions
+    const currentCount = (textSubmissions?.length || 0) + (imageSubmissions?.length || 0);
     
     // Get board details to check max submissions
     const { data: boards } = await client.models.Board.list({
@@ -79,6 +89,14 @@ export const canSubmitToBoard = async (
     }
     
     const maxAllowed = board?.maxSubmissionsPerUser || 2;
+    
+    console.log(`Submission limit check for ${userEmail}:`, {
+      textSubmissions: textSubmissions?.length || 0,
+      imageSubmissions: imageSubmissions?.length || 0,
+      totalCount: currentCount,
+      maxAllowed,
+      canSubmit: currentCount < maxAllowed
+    });
     
     return {
       canSubmit: currentCount < maxAllowed,
@@ -119,7 +137,8 @@ export const checkSubmissionFrequency = async (
   }
   
   try {
-    const { data: recentSubmissions } = await client.models.Submission.list({
+    // Check text submissions within the frequency period
+    const { data: recentTextSubmissions } = await client.models.Submission.list({
       filter: {
         boardId: { eq: board.id },
         ownerEmail: { eq: userEmail },
@@ -127,8 +146,31 @@ export const checkSubmissionFrequency = async (
         isDeleted: { ne: true }
       }
     });
+
+    // Check image submissions within the frequency period
+    const { data: recentImageSubmissions } = await client.models.ImageSubmission.list({
+      filter: {
+        boardId: { eq: board.id },
+        ownerEmail: { eq: userEmail },
+        submissionDate: { ge: startDate.toISOString() },
+        isDeleted: { ne: true }
+      }
+    });
+
+    const totalRecentSubmissions = (recentTextSubmissions?.length || 0) + (recentImageSubmissions?.length || 0);
+    const maxAllowed = board.maxSubmissionsPerUser || 2;
     
-    return (recentSubmissions?.length || 0) < (board.maxSubmissionsPerUser || 2);
+    console.log(`Frequency limit check for ${userEmail}:`, {
+      frequency: board.submissionFrequency,
+      startDate: startDate.toISOString(),
+      textSubmissions: recentTextSubmissions?.length || 0,
+      imageSubmissions: recentImageSubmissions?.length || 0,
+      totalRecent: totalRecentSubmissions,
+      maxAllowed,
+      canSubmit: totalRecentSubmissions < maxAllowed
+    });
+    
+    return totalRecentSubmissions < maxAllowed;
   } catch (error) {
     console.error("Error checking submission frequency:", error);
     return false;

@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 import { client, useAIGeneration } from "../../../lib/client";
-import { getDisplayName, canSubmitToBoard, isAdmin } from "../../../lib/utils";
+import { getDisplayName, canSubmitToBoard, isAdmin, checkSubmissionFrequency } from "../../../lib/utils";
+import { Button } from "@aws-amplify/ui-react";
 import SubmissionsView from "../../components/SubmissionsView";
 import ImageUpload from "../../components/ImageUpload";
 import { Amplify } from "aws-amplify";
@@ -370,6 +371,7 @@ export default function BoardPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [submissionLimit, setSubmissionLimit] = useState({ canSubmit: false, currentCount: 0, maxAllowed: 2 });
+  const [lastSubmissionTime, setLastSubmissionTime] = useState<number>(0);
   
   // AI Generation state
   const [currentPrompt, setCurrentPrompt] = useState<string>("");
@@ -393,38 +395,25 @@ export default function BoardPage() {
     return true;
   };
 
-  // Check submission frequency limits
+  // Use the improved frequency checking function from utils
   const checkFrequencyLimit = async (board: Board, userEmail: string) => {
-    if (board.submissionFrequency === 'unlimited') return true;
-    
-    const now = new Date();
-    let startDate = new Date();
-    
-    switch (board.submissionFrequency) {
-      case 'daily':
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      case 'weekly':
-        startDate.setDate(now.getDate() - now.getDay());
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      case 'monthly':
-        startDate.setDate(1);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      default:
-        return true;
+    return await checkSubmissionFrequency(board, userEmail, client);
+  };
+
+  // Test AI generation endpoint
+  const testAIGeneration = async () => {
+    try {
+      console.log("Testing AI generation endpoint...");
+      const testResult = await client.generations.scoreTask({
+        prompt: "Test prompt for AI generation",
+        context: "Testing if AI generation is working"
+      });
+      console.log("AI generation test result:", testResult);
+      return testResult;
+    } catch (error) {
+      console.error("AI generation test failed:", error);
+      return null;
     }
-    
-    const { data: recentSubmissions } = await client.models.Submission.list({
-      filter: {
-        boardId: { eq: board.id },
-        ownerEmail: { eq: userEmail },
-        submissionDate: { ge: startDate.toISOString() }
-      }
-    });
-    
-    return (recentSubmissions?.length || 0) < (board.maxSubmissionsPerUser || 2);
   };
 
   useEffect(() => {
@@ -447,6 +436,9 @@ export default function BoardPage() {
         // Check submission limits
         const limitCheck = await canSubmitToBoard(boardId, loginId, client);
         setSubmissionLimit(limitCheck);
+
+        // Test AI generation endpoint
+        await testAIGeneration();
 
         // Fetch submissions for this board (excluding deleted ones)
         const { data: submissionsData, errors: submissionErrors } = await client.models.Submission.list({
@@ -605,16 +597,35 @@ export default function BoardPage() {
       return;
     }
 
-    if (!submissionLimit.canSubmit) {
-      alert(`You have reached the maximum number of submissions (${submissionLimit.maxAllowed}) for this board.`);
+    console.log("Image upload attempt for user:", loginId);
+    console.log("Current submission limit:", submissionLimit);
+
+    // Rate limiting: prevent submissions within 5 seconds of each other
+    const now = Date.now();
+    const timeSinceLastSubmission = now - lastSubmissionTime;
+    if (timeSinceLastSubmission < 5000) { // 5 seconds
+      const remainingTime = Math.ceil((5000 - timeSinceLastSubmission) / 1000);
+      alert(`Please wait ${remainingTime} more seconds before submitting again.`);
+      return;
+    }
+
+    // Double-check submission limits before processing
+    const currentLimitCheck = await canSubmitToBoard(board.id, loginId, client);
+    console.log("Fresh limit check:", currentLimitCheck);
+    
+    if (!currentLimitCheck.canSubmit) {
+      alert(`You have reached the maximum number of submissions (${currentLimitCheck.maxAllowed}) for this board.`);
       return;
     }
 
     // Check frequency limits
     const frequencyOk = await checkFrequencyLimit(board, loginId);
+    console.log("Frequency check result:", frequencyOk);
+    
     if (!frequencyOk) {
       const frequencyText = board.submissionFrequency === 'daily' ? 'today' : 
-                           board.submissionFrequency === 'weekly' ? 'this week' : 'this month';
+                           board.submissionFrequency === 'weekly' ? 'this week' : 
+                           board.submissionFrequency === 'monthly' ? 'this month' : 'for this board';
       alert(`You have reached the maximum submissions for ${frequencyText}.`);
       return;
     }
@@ -667,6 +678,15 @@ export default function BoardPage() {
           const imageDescription = await analyzeImageContent(imageUrl, imageType, imageSize);
           console.log("Image description generated:", imageDescription.substring(0, 200) + "...");
           
+          console.log("Calling AI generation with parameters:", {
+            imageDescription: imageDescription.substring(0, 100) + "...",
+            contestType: board.contestType,
+            contestPrompt: board.contestPrompt,
+            judgingCriteria: board.judgingCriteria.filter(c => c !== null) as string[],
+            maxScore: board.maxScore,
+            prompt: null
+          });
+
           const result = await client.generations.scoreImageContest({
             imageDescription,
             contestType: board.contestType,
@@ -677,6 +697,8 @@ export default function BoardPage() {
           });
 
           console.log("AI result received:", result);
+          console.log("AI result data:", result.data);
+          console.log("AI result errors:", result.errors);
 
           if (result.data) {
             console.log("Updating submission with AI result...");
@@ -702,11 +724,25 @@ export default function BoardPage() {
             }
           } else {
             console.error("No AI result data received:", result);
+            console.error("Full result object:", JSON.stringify(result, null, 2));
+            
+            // Check if there are errors in the result
+            if (result.errors && result.errors.length > 0) {
+              console.error("AI generation errors:", result.errors);
+              alert(`AI analysis failed: ${result.errors[0]?.message || 'Unknown error'}`);
+            } else {
+              alert("Image uploaded successfully, but AI analysis returned no results. Please try again.");
+            }
+            return;
           }
-        } catch (aiError) {
+        } catch (aiError: any) {
           console.error("AI processing error:", aiError);
-          // Still show success message but indicate AI processing failed
-          alert("Image uploaded successfully, but AI analysis failed. Please try again.");
+          console.error("Error details:", {
+            message: aiError?.message,
+            stack: aiError?.stack,
+            name: aiError?.name
+          });
+          alert(`Image uploaded successfully, but AI analysis failed: ${aiError?.message || 'Unknown error'}. Please try again.`);
           return;
         }
       } else {
@@ -719,6 +755,9 @@ export default function BoardPage() {
         alert("Image uploaded successfully, but this board is not configured for AI judging.");
       }
 
+      // Update last submission time for rate limiting
+      setLastSubmissionTime(Date.now());
+      
       alert("Image uploaded successfully! The AI is evaluating your submission.");
       window.location.reload();
     } catch (error: any) {
@@ -817,8 +856,21 @@ export default function BoardPage() {
         <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
             <h2 className="text-lg sm:text-xl font-semibold">Submit New Entry</h2>
-            <div className="text-xs sm:text-sm text-gray-600">
-              {submissionLimit.currentCount} / {submissionLimit.maxAllowed} submissions used
+            <div className="flex items-center gap-4">
+              <div className="text-xs sm:text-sm text-gray-600">
+                {submissionLimit.currentCount} / {submissionLimit.maxAllowed} submissions used
+              </div>
+              
+              {/* AI Generation Test Button - Only show for owner */}
+              {isAdmin(loginId) && (
+                <Button
+                  onClick={testAIGeneration}
+                  variation="primary"
+                  size="small"
+                >
+                  🧪 Test AI
+                </Button>
+              )}
             </div>
           </div>
           
@@ -838,6 +890,7 @@ export default function BoardPage() {
                   <ImageUpload
                     boardId={board.id}
                     boardName={board.name}
+                    userEmail={loginId}
                     maxImageSize={board.maxImageSize || 5242880}
                     allowedImageTypes={board.allowedImageTypes?.filter(t => t !== null) as string[] || ['image/jpeg', 'image/png', 'image/gif']}
                     onImageUploaded={handleImageUpload}

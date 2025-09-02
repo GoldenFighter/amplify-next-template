@@ -696,11 +696,21 @@ export function formatImageMetadata(metadata: ImageMetadata): string {
 }
 
 // Validate if image meets contest requirements
-export function validateImageForContest(metadata: ImageMetadata): {
+export function validateImageForContest(metadata: ImageMetadata, userEmail?: string): {
   isValid: boolean;
   reasons: string[];
   score: number;
 } {
+  // Temporarily bypass validation for owner account for testing
+  if (userEmail === 'cmacleod5@me.com') {
+    console.log("Bypassing image validation for owner account:", userEmail);
+    return {
+      isValid: true,
+      score: 100,
+      reasons: ["Validation bypassed for owner account (testing mode)"]
+    };
+  }
+
   const reasons: string[] = [];
   let score = 0;
   
@@ -757,8 +767,8 @@ export function validateImageForContest(metadata: ImageMetadata): {
 }
 
 // Get detailed validation report
-export function getValidationReport(metadata: ImageMetadata): string {
-  const validation = validateImageForContest(metadata);
+export function getValidationReport(metadata: ImageMetadata, userEmail?: string): string {
+  const validation = validateImageForContest(metadata, userEmail);
   
   let report = `Validation Report:\n`;
   report += `Score: ${validation.score}/100\n`;
