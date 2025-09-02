@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 
-const lambdaClient = new LambdaClient({ region: process.env.AWS_REGION || 'us-east-1' });
+const lambdaClient = new LambdaClient({ region: process.env.AWS_REGION || 'eu-west-1' });
 
 export async function POST(req: NextRequest) {
   try {
@@ -41,6 +41,9 @@ export async function POST(req: NextRequest) {
 
     const response = await lambdaClient.send(command);
     
+    console.log("Image Analysis API: Lambda response status:", response.StatusCode);
+    console.log("Image Analysis API: Lambda response payload exists:", !!response.Payload);
+    
     if (response.Payload) {
       const result = JSON.parse(new TextDecoder().decode(response.Payload));
       
@@ -54,6 +57,14 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      if (result.statusCode && result.statusCode !== 200) {
+        console.error("Image Analysis API: Lambda returned error status:", result.statusCode);
+        return NextResponse.json(
+          { error: result.body || 'Lambda function error' }, 
+          { status: result.statusCode }
+        );
+      }
+
       // Return the structured analysis result
       return NextResponse.json({
         success: true,
@@ -62,6 +73,7 @@ export async function POST(req: NextRequest) {
         timestamp: new Date().toISOString(),
       });
     } else {
+      console.error("Image Analysis API: No payload in Lambda response");
       return NextResponse.json(
         { error: 'No response from Lambda function' }, 
         { status: 500 }

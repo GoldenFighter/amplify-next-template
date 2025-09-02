@@ -4,9 +4,9 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
 // Initialize AWS clients
 const bedrockClient = new BedrockRuntimeClient({ 
-  region: process.env.BEDROCK_REGION || 'us-east-1' 
+  region: process.env.BEDROCK_REGION || 'eu-west-1' 
 });
-const s3Client = new S3Client({ region: process.env.BEDROCK_REGION || 'us-east-1' });
+const s3Client = new S3Client({ region: process.env.BEDROCK_REGION || 'eu-west-1' });
 
 // Claude 3.5 Sonnet model ID
 const MODEL_ID = 'anthropic.claude-3-5-sonnet-20241022-v2:0';
@@ -31,12 +31,24 @@ export const handler = async (
 ): Promise<APIGatewayProxyResult> => {
   const startTime = Date.now();
   
+  console.log('Lambda function started');
+  console.log('Event:', JSON.stringify(event, null, 2));
+  
   try {
     // Parse request body
     const body = JSON.parse(event.body || '{}') as ImageAnalysisRequest;
     const { imageUrl, analysisType, specificQuestions, documentType, expectedFields } = body;
 
+    console.log('Parsed request body:', {
+      imageUrl,
+      analysisType,
+      documentType,
+      hasQuestions: specificQuestions && specificQuestions.length > 0,
+      hasExpectedFields: expectedFields && expectedFields.length > 0
+    });
+
     if (!imageUrl) {
+      console.log('Error: Image URL is required');
       return {
         statusCode: 400,
         headers: {
@@ -53,11 +65,16 @@ export const handler = async (
     }
 
     // Download image from S3 or URL
+    console.log('Starting image download and encoding...');
     const imageBase64 = await downloadAndEncodeImage(imageUrl);
+    console.log('Image downloaded and encoded, length:', imageBase64.length);
 
     // Determine analysis type and create appropriate prompt
     const systemPrompt = createSystemPrompt(analysisType, documentType, expectedFields);
     const userPrompt = createUserPrompt(analysisType, specificQuestions, expectedFields);
+    
+    console.log('System prompt:', systemPrompt);
+    console.log('User prompt:', userPrompt);
 
     // Prepare the request for Claude
     const requestBody = {
@@ -88,6 +105,7 @@ export const handler = async (
     };
 
     // Invoke Claude model
+    console.log('Invoking Claude model:', MODEL_ID);
     const command = new InvokeModelCommand({
       modelId: MODEL_ID,
       body: JSON.stringify(requestBody),
@@ -95,10 +113,14 @@ export const handler = async (
     });
 
     const response = await bedrockClient.send(command);
+    console.log('Claude response received');
+    
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+    console.log('Claude response body:', JSON.stringify(responseBody, null, 2));
     
     // Extract the analysis result
     const analysisResult = responseBody.content[0].text;
+    console.log('Analysis result:', analysisResult);
     
     // Parse the JSON response
     let parsedResult;
@@ -110,6 +132,7 @@ export const handler = async (
     }
 
     const processingTime = Date.now() - startTime;
+    console.log('Processing completed successfully in', processingTime, 'ms');
 
     return {
       statusCode: 200,
@@ -128,6 +151,7 @@ export const handler = async (
 
   } catch (error) {
     console.error('Error processing image analysis:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     const processingTime = Date.now() - startTime;
 
     return {
@@ -149,12 +173,16 @@ export const handler = async (
 
 async function downloadAndEncodeImage(imageUrl: string): Promise<string> {
   try {
+    console.log('Downloading image from URL:', imageUrl);
+    
     // Handle S3 URLs
     if (imageUrl.includes('amazonaws.com') || imageUrl.includes('s3://')) {
+      console.log('Detected S3 URL, using S3 download method');
       return await downloadFromS3(imageUrl);
     }
     
     // Handle regular URLs
+    console.log('Using fetch for regular URL');
     const response = await fetch(imageUrl);
     if (!response.ok) {
       throw new Error(`Failed to download image: ${response.statusText}`);
@@ -162,6 +190,7 @@ async function downloadAndEncodeImage(imageUrl: string): Promise<string> {
     
     const arrayBuffer = await response.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString('base64');
+    console.log('Image downloaded and encoded successfully, base64 length:', base64.length);
     return base64;
   } catch (error) {
     console.error('Error downloading image:', error);

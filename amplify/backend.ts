@@ -21,8 +21,8 @@ backend.imageAnalysis.resources.lambda.addToRolePolicy(
       'bedrock:InvokeModelWithResponseStream',
     ],
     resources: [
-      'arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0',
-      'arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-5-sonnet-20241022-v1:0',
+      'arn:aws:bedrock:eu-west-1::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0',
+      'arn:aws:bedrock:eu-west-1::foundation-model/anthropic.claude-3-5-sonnet-20241022-v1:0',
     ],
   })
 );
