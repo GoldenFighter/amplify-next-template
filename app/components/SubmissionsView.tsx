@@ -111,6 +111,17 @@ interface Submission {
   imageSize?: number;
   imageType?: string;
   isProcessed?: boolean;
+  // Comprehensive EXIF metadata
+  fileName?: string;
+  lastModified?: string;
+  deviceMake?: string;
+  deviceModel?: string;
+  software?: string;
+  gpsLatitude?: number;
+  gpsLongitude?: number;
+  imageWidth?: number;
+  imageHeight?: number;
+  orientation?: number;
 }
 
 interface SubmissionsViewProps {
@@ -427,12 +438,17 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
                       </Badge>
                       {submission.isProcessed === false && (
                         <Badge variation="warning" size="small">
-                          ⏳ Processing...
+                          ⏳ AI Processing...
                         </Badge>
                       )}
                       {submission.isProcessed === true && (
                         <Badge variation="success" size="small">
-                          ✅ Analyzed
+                          ✅ AI Analyzed
+                        </Badge>
+                      )}
+                      {submission.isProcessed === undefined && (
+                        <Badge variation="error" size="small">
+                          ❌ AI Failed
                         </Badge>
                       )}
                     </Flex>
@@ -517,9 +533,18 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
                           </Text>
                         </div>
                         <div className="flex justify-between">
-                          <Text fontSize="0.875rem" fontWeight="medium" color="gray-700">Processing Status:</Text>
-                          <Badge variation={submission.isProcessed ? "success" : "warning"} size="small">
-                            {submission.isProcessed ? "✅ Processed" : "⏳ Processing"}
+                          <Text fontSize="0.875rem" fontWeight="medium" color="gray-700">AI Processing Status:</Text>
+                          <Badge 
+                            variation={
+                              submission.isProcessed === true ? "success" : 
+                              submission.isProcessed === false ? "warning" : 
+                              "error"
+                            } 
+                            size="small"
+                          >
+                            {submission.isProcessed === true ? "✅ AI Analyzed" : 
+                             submission.isProcessed === false ? "⏳ AI Processing..." : 
+                             "❌ AI Failed"}
                           </Badge>
                         </div>
                         <div className="flex justify-between">
@@ -549,51 +574,152 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
                           </Button>
                         </div>
                         
-                        {/* Enhanced Mobile Metadata */}
-                        {(submission as any).fileName && (
-                          <div className="mt-4 p-3 bg-blue-100 rounded-lg border border-blue-300">
-                            <Text fontSize="0.875rem" fontWeight="medium" color="blue-800" marginBottom="small">
-                              📱 Mobile Device Information
+                        {/* Comprehensive EXIF Metadata */}
+                        {(submission.fileName || submission.deviceMake || submission.software) && (
+                          <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                            <Text fontSize="1rem" fontWeight="bold" color="blue-800" marginBottom="medium">
+                              📱 Comprehensive EXIF Metadata
                             </Text>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                              {(submission as any).fileName && (
-                                <div className="flex justify-between">
-                                  <span className="font-medium">Original File:</span>
-                                  <span className="font-mono">{(submission as any).fileName}</span>
+                            
+                            {/* Device Information */}
+                            {(submission.deviceMake || submission.deviceModel || submission.software) && (
+                              <div className="mb-4 p-3 bg-white rounded-lg border border-blue-100">
+                                <Text fontSize="0.875rem" fontWeight="semibold" color="blue-700" marginBottom="small">
+                                  📷 Camera & Device Information
+                                </Text>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                  {submission.deviceMake && submission.deviceModel && (
+                                    <div className="flex justify-between items-center">
+                                      <Text fontSize="0.875rem" fontWeight="medium" color="gray-700">Device:</Text>
+                                      <Badge variation="info" size="small">
+                                        {submission.deviceMake} {submission.deviceModel}
+                                      </Badge>
+                                    </div>
+                                  )}
+                                  {submission.software && (
+                                    <div className="flex justify-between items-center">
+                                      <Text fontSize="0.875rem" fontWeight="medium" color="gray-700">Software:</Text>
+                                      <Badge variation="info" size="small">
+                                        {submission.software}
+                                      </Badge>
+                                    </div>
+                                  )}
+                                  {submission.fileName && (
+                                    <div className="flex justify-between items-center">
+                                      <Text fontSize="0.875rem" fontWeight="medium" color="gray-700">Original File:</Text>
+                                      <Text fontSize="0.75rem" color="gray-600" className="font-mono bg-gray-100 px-2 py-1 rounded">
+                                        {submission.fileName}
+                                      </Text>
+                                    </div>
+                                  )}
+                                  {submission.lastModified && (
+                                    <div className="flex justify-between items-center">
+                                      <Text fontSize="0.875rem" fontWeight="medium" color="gray-700">File Date:</Text>
+                                      <Text fontSize="0.75rem" color="gray-600">
+                                        {new Date(submission.lastModified).toLocaleString()}
+                                      </Text>
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                              {(submission as any).deviceMake && (
-                                <div className="flex justify-between">
-                                  <span className="font-medium">Device:</span>
-                                  <span>{(submission as any).deviceMake} {(submission as any).deviceModel}</span>
+                              </div>
+                            )}
+
+                            {/* Image Technical Details */}
+                            {(submission.imageWidth || submission.imageHeight || submission.orientation) && (
+                              <div className="mb-4 p-3 bg-white rounded-lg border border-blue-100">
+                                <Text fontSize="0.875rem" fontWeight="semibold" color="blue-700" marginBottom="small">
+                                  🖼️ Image Technical Details
+                                </Text>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                                  {submission.imageWidth && submission.imageHeight && (
+                                    <div className="flex justify-between items-center">
+                                      <Text fontSize="0.875rem" fontWeight="medium" color="gray-700">Resolution:</Text>
+                                      <Badge variation="success" size="small">
+                                        {submission.imageWidth} × {submission.imageHeight}
+                                      </Badge>
+                                    </div>
+                                  )}
+                                  {submission.orientation && (
+                                    <div className="flex justify-between items-center">
+                                      <Text fontSize="0.875rem" fontWeight="medium" color="gray-700">Orientation:</Text>
+                                      <Badge variation="info" size="small">
+                                        {submission.orientation === 1 ? 'Landscape' : 
+                                         submission.orientation === 6 ? 'Portrait' : 
+                                         `Rotation ${submission.orientation}`}
+                                      </Badge>
+                                    </div>
+                                  )}
+                                  {submission.imageSize && (
+                                    <div className="flex justify-between items-center">
+                                      <Text fontSize="0.875rem" fontWeight="medium" color="gray-700">File Size:</Text>
+                                      <Badge variation="info" size="small">
+                                        {Math.round(submission.imageSize / 1024)}KB
+                                      </Badge>
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                              {(submission as any).software && (
-                                <div className="flex justify-between">
-                                  <span className="font-medium">App:</span>
-                                  <span>{(submission as any).software}</span>
+                              </div>
+                            )}
+
+                            {/* GPS Location Data */}
+                            {submission.gpsLatitude && submission.gpsLongitude && (
+                              <div className="mb-4 p-3 bg-white rounded-lg border border-blue-100">
+                                <Text fontSize="0.875rem" fontWeight="semibold" color="blue-700" marginBottom="small">
+                                  🌍 GPS Location Data
+                                </Text>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                  <div className="flex justify-between items-center">
+                                    <Text fontSize="0.875rem" fontWeight="medium" color="gray-700">Latitude:</Text>
+                                    <Text fontSize="0.75rem" color="gray-600" className="font-mono bg-gray-100 px-2 py-1 rounded">
+                                      {submission.gpsLatitude.toFixed(6)}°
+                                    </Text>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <Text fontSize="0.875rem" fontWeight="medium" color="gray-700">Longitude:</Text>
+                                    <Text fontSize="0.75rem" color="gray-600" className="font-mono bg-gray-100 px-2 py-1 rounded">
+                                      {submission.gpsLongitude.toFixed(6)}°
+                                    </Text>
+                                  </div>
+                                  <div className="col-span-full">
+                                    <Button
+                                      variation="link"
+                                      size="small"
+                                      onClick={() => {
+                                        const mapsUrl = `https://www.google.com/maps?q=${submission.gpsLatitude},${submission.gpsLongitude}`;
+                                        window.open(mapsUrl, '_blank');
+                                      }}
+                                      className="text-blue-600 hover:text-blue-800 text-xs"
+                                    >
+                                      🗺️ View on Google Maps
+                                    </Button>
+                                  </div>
                                 </div>
-                              )}
-                              {(submission as any).imageWidth && (submission as any).imageHeight && (
-                                <div className="flex justify-between">
-                                  <span className="font-medium">Resolution:</span>
-                                  <span>{(submission as any).imageWidth} × {(submission as any).imageHeight}</span>
-                                </div>
-                              )}
-                              {(submission as any).gpsLatitude && (submission as any).gpsLongitude && (
-                                <div className="flex justify-between">
-                                  <span className="font-medium">Location:</span>
-                                  <span className="font-mono text-xs">
-                                    {(submission as any).gpsLatitude.toFixed(4)}, {(submission as any).gpsLongitude.toFixed(4)}
-                                  </span>
-                                </div>
-                              )}
-                              {(submission as any).lastModified && (
-                                <div className="flex justify-between">
-                                  <span className="font-medium">File Date:</span>
-                                  <span>{new Date((submission as any).lastModified).toLocaleString()}</span>
-                                </div>
-                              )}
+                              </div>
+                            )}
+
+                            {/* Validation Status */}
+                            <div className="p-3 bg-white rounded-lg border border-blue-100">
+                              <Text fontSize="0.875rem" fontWeight="semibold" color="blue-700" marginBottom="small">
+                                ✅ Validation Status
+                              </Text>
+                              <div className="flex flex-wrap gap-2">
+                                <Badge variation="success" size="small">
+                                  📱 Phone Camera Detected
+                                </Badge>
+                                {submission.lastModified && (
+                                  <Badge variation="success" size="small">
+                                    ⏰ Recent Photo
+                                  </Badge>
+                                )}
+                                {submission.gpsLatitude && submission.gpsLongitude && (
+                                  <Badge variation="info" size="small">
+                                    📍 Location Tagged
+                                  </Badge>
+                                )}
+                                <Badge variation="success" size="small">
+                                  🔍 EXIF Data Extracted
+                                </Badge>
+                              </div>
                             </div>
                           </div>
                         )}
@@ -608,68 +734,106 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
                     🤖 AI Analysis Results
                   </Heading>
                   
-                  {/* Summary */}
-                  <div className="mb-4">
-                    <Text fontSize="0.875rem" fontWeight="medium" color="gray-700" marginBottom="small">
-                      Summary:
-                    </Text>
-                    <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                      <Text fontSize="0.875rem" color="gray-600">
-                        {submission.result.summary}
+                  {/* Processing Status */}
+                  {submission.isProcessed === false && (
+                    <Alert variation="info" marginBottom="medium">
+                      <Text fontSize="0.875rem">
+                        ⏳ <strong>AI Analysis in Progress:</strong> Your image is currently being analyzed by our AI system. 
+                        This usually takes 10-30 seconds. Please refresh the page in a moment to see your results.
                       </Text>
-                    </div>
-                  </div>
-
-                  {/* Reasoning */}
-                  <div className="mb-4">
-                    <Text fontSize="0.875rem" fontWeight="medium" color="gray-700" marginBottom="small">
-                      Detailed Reasoning:
-                    </Text>
-                    <div className="p-3 bg-gray-50 rounded-lg border">
-                      <Text fontSize="0.875rem" color="gray-600" whiteSpace="pre-wrap">
-                        {submission.result.reasoning}
+                    </Alert>
+                  )}
+                  
+                  {submission.isProcessed === undefined && (
+                    <Alert variation="error" marginBottom="medium">
+                      <Text fontSize="0.875rem">
+                        ❌ <strong>AI Analysis Failed:</strong> There was an issue processing your image with our AI system. 
+                        This could be due to a temporary service issue or missing contest configuration. 
+                        Please try uploading again or contact support if the issue persists.
                       </Text>
-                    </div>
-                  </div>
-
-                  {/* Risks and Recommendations */}
-                  <Flex direction="column" gap="1rem" className="md:grid md:grid-cols-2 md:gap-4">
-                    {submission.result.risks && submission.result.risks.length > 0 && (
-                      <div>
+                    </Alert>
+                  )}
+                  
+                  {submission.isProcessed === true && submission.result && (
+                    <>
+                      {/* Summary */}
+                      <div className="mb-4">
                         <Text fontSize="0.875rem" fontWeight="medium" color="gray-700" marginBottom="small">
-                          ⚠️ Identified Risks:
+                          Summary:
                         </Text>
-                        <div className="p-3 bg-red-50 rounded-lg border border-red-200">
-                          <ul className="text-sm text-gray-600 space-y-1">
-                            {submission.result.risks.map((risk: string, index: number) => (
-                              <li key={index} className="flex items-start">
-                                <span className="text-red-500 mr-2">•</span>
-                                <span>{risk}</span>
-                              </li>
-                            ))}
-                          </ul>
+                        <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                          <Text fontSize="0.875rem" color="gray-600">
+                            {submission.result.summary}
+                          </Text>
                         </div>
                       </div>
-                    )}
-                    
-                    {submission.result.recommendations && submission.result.recommendations.length > 0 && (
-                      <div>
+                    </>
+                  )}
+                  
+                  {submission.isProcessed === true && !submission.result && (
+                    <Alert variation="warning" marginBottom="medium">
+                      <Text fontSize="0.875rem">
+                        ⚠️ <strong>Analysis Complete but No Results:</strong> The AI processing completed but no results were returned. 
+                        This may indicate an issue with the contest configuration or AI service.
+                      </Text>
+                    </Alert>
+                  )}
+
+                  {/* Show detailed results only if we have them */}
+                  {submission.isProcessed === true && submission.result && (
+                    <>
+                      {/* Reasoning */}
+                      <div className="mb-4">
                         <Text fontSize="0.875rem" fontWeight="medium" color="gray-700" marginBottom="small">
-                          💡 Recommendations:
+                          Detailed Reasoning:
                         </Text>
-                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                          <ul className="text-sm text-gray-600 space-y-1">
-                            {submission.result.recommendations.map((rec: string, index: number) => (
-                              <li key={index} className="flex items-start">
-                                <span className="text-blue-500 mr-2">•</span>
-                                <span>{rec}</span>
-                              </li>
-                            ))}
-                          </ul>
+                        <div className="p-3 bg-gray-50 rounded-lg border">
+                          <Text fontSize="0.875rem" color="gray-600" whiteSpace="pre-wrap">
+                            {submission.result.reasoning}
+                          </Text>
                         </div>
                       </div>
-                    )}
-                  </Flex>
+
+                      {/* Risks and Recommendations */}
+                      <Flex direction="column" gap="1rem" className="md:grid md:grid-cols-2 md:gap-4">
+                        {submission.result.risks && submission.result.risks.length > 0 && (
+                          <div>
+                            <Text fontSize="0.875rem" fontWeight="medium" color="gray-700" marginBottom="small">
+                              ⚠️ Identified Risks:
+                            </Text>
+                            <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+                              <ul className="text-sm text-gray-600 space-y-1">
+                                {submission.result.risks.map((risk: string, index: number) => (
+                                  <li key={index} className="flex items-start">
+                                    <span className="text-red-500 mr-2">•</span>
+                                    <span>{risk}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {submission.result.recommendations && submission.result.recommendations.length > 0 && (
+                          <div>
+                            <Text fontSize="0.875rem" fontWeight="medium" color="gray-700" marginBottom="small">
+                              💡 Recommendations:
+                            </Text>
+                            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                              <ul className="text-sm text-gray-600 space-y-1">
+                                {submission.result.recommendations.map((rec: string, index: number) => (
+                                  <li key={index} className="flex items-start">
+                                    <span className="text-blue-500 mr-2">•</span>
+                                    <span>{rec}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        )}
+                      </Flex>
+                    </>
+                  )}
                 </div>
 
                 {/* Submission Context */}

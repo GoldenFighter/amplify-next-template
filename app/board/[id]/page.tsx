@@ -32,14 +32,14 @@ async function analyzeImageContent(imageUrl: string, imageType: string, imageSiz
       `Technical quality: ${imageInfo.quality}`,
       `Image dimensions: ${imageInfo.width}×${imageInfo.height}px`,
       `File details: ${imageType}, ${Math.round(imageSize / 1024)}KB`,
-      userPrompt ? `User provided context: ${userPrompt}` : 'No additional context provided',
+      'Image-only submission - no additional text context provided',
     ].join(' ');
     
     return description;
   } catch (error) {
     console.error('Error analyzing image:', error);
     // Fallback with basic info
-    return `Image Analysis Error. File: ${imageType}, ${Math.round(imageSize / 1024)}KB. User context: ${userPrompt || 'None provided'}. Please analyze the actual image content carefully.`;
+    return `Image Analysis Error. File: ${imageType}, ${Math.round(imageSize / 1024)}KB. Image-only submission - no text context. Please analyze the actual image content carefully.`;
   }
 }
 
@@ -619,13 +619,8 @@ export default function BoardPage() {
       return;
     }
 
-    // Get optional text prompt for the image
-    let prompt = "";
-    if (board.contestPrompt) {
-      prompt = window.prompt(`Contest Question: ${board.contestPrompt}\n\nOptional text description for your image:`) || "";
-    } else {
-      prompt = window.prompt("Optional text description for your image:") || "";
-    }
+    // No text prompt needed - image-only submission
+    const prompt = "";
 
     try {
       // Create image submission record with metadata
@@ -657,29 +652,71 @@ export default function BoardPage() {
       });
 
       // Generate AI evaluation for the image
-      if (board.contestType && board.contestPrompt && board.judgingCriteria && board.maxScore) {
-        // Analyze the actual image content to create a unique description
-        const imageDescription = await analyzeImageContent(imageUrl, imageType, imageSize, prompt);
-        
-        const result = await client.generations.scoreImageContest({
-          imageDescription,
-          contestType: board.contestType,
-          contestPrompt: board.contestPrompt,
-          judgingCriteria: board.judgingCriteria.filter(c => c !== null) as string[],
-          maxScore: board.maxScore,
-          prompt: prompt || null,
-        });
+      console.log("Board contest fields:", {
+        contestType: board.contestType,
+        contestPrompt: board.contestPrompt,
+        judgingCriteria: board.judgingCriteria,
+        maxScore: board.maxScore
+      });
 
-        if (result.data) {
-          // Update the image submission with the AI result
-          await client.models.ImageSubmission.update({
-            id: (await client.models.ImageSubmission.list({
-              filter: { imageKey: { eq: imageKey } }
-            })).data?.[0]?.id,
-            result: result.data,
-            isProcessed: true,
+      if (board.contestType && board.contestPrompt && board.judgingCriteria && board.maxScore) {
+        try {
+          console.log("Starting AI analysis...");
+          
+          // Analyze the actual image content to create a unique description
+          const imageDescription = await analyzeImageContent(imageUrl, imageType, imageSize);
+          console.log("Image description generated:", imageDescription.substring(0, 200) + "...");
+          
+          const result = await client.generations.scoreImageContest({
+            imageDescription,
+            contestType: board.contestType,
+            contestPrompt: board.contestPrompt,
+            judgingCriteria: board.judgingCriteria.filter(c => c !== null) as string[],
+            maxScore: board.maxScore,
+            prompt: null, // No text prompt for image-only submissions
           });
+
+          console.log("AI result received:", result);
+
+          if (result.data) {
+            console.log("Updating submission with AI result...");
+            
+            // Find the submission we just created
+            const submissions = await client.models.ImageSubmission.list({
+              filter: { imageKey: { eq: imageKey } }
+            });
+            
+            if (submissions.data && submissions.data.length > 0) {
+              const submissionId = submissions.data[0].id;
+              console.log("Updating submission ID:", submissionId);
+              
+              await client.models.ImageSubmission.update({
+                id: submissionId,
+                result: result.data,
+                isProcessed: true,
+              });
+              
+              console.log("AI result saved successfully");
+            } else {
+              console.error("Could not find submission to update");
+            }
+          } else {
+            console.error("No AI result data received:", result);
+          }
+        } catch (aiError) {
+          console.error("AI processing error:", aiError);
+          // Still show success message but indicate AI processing failed
+          alert("Image uploaded successfully, but AI analysis failed. Please try again.");
+          return;
         }
+      } else {
+        console.warn("Board missing contest configuration:", {
+          hasContestType: !!board.contestType,
+          hasContestPrompt: !!board.contestPrompt,
+          hasJudgingCriteria: !!board.judgingCriteria,
+          hasMaxScore: !!board.maxScore
+        });
+        alert("Image uploaded successfully, but this board is not configured for AI judging.");
       }
 
       alert("Image uploaded successfully! The AI is evaluating your submission.");
