@@ -4,8 +4,6 @@ import React, { useState } from 'react';
 import { Button } from '@aws-amplify/ui-react';
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { uploadData, getUrl } from 'aws-amplify/storage';
-import { Amplify } from 'aws-amplify';
-import outputs from '../../amplify_outputs.json';
 
 interface ImageAnalysisResult {
   success: boolean;
@@ -30,15 +28,8 @@ export default function ImageAnalyzer({
   expectedFields,
   specificQuestions,
 }: ImageAnalyzerProps) {
-  // Configure Amplify if not already configured
-  if (!Amplify.getConfig().Auth) {
-    console.log("Configuring Amplify in ImageAnalyzer component...");
-    Amplify.configure(outputs);
-    console.log("Amplify configured successfully in ImageAnalyzer component");
-  }
-
   // Get authentication state
-  const { user, signOut } = useAuthenticator();
+  const { user } = useAuthenticator();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -227,23 +218,6 @@ export default function ImageAnalyzer({
       </div>
     );
   };
-
-  // Show authentication prompt if not logged in
-  if (!user) {
-    return (
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-2">Image Analysis with Claude 3.5 Sonnet</h2>
-          <p className="text-gray-600 mb-4">
-            Please log in to use the image analysis feature.
-          </p>
-          <p className="text-sm text-gray-500">
-            This feature requires authentication to access AWS services.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">

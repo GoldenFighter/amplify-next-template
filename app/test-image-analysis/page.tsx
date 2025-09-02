@@ -1,19 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useAuthenticator } from '@aws-amplify/ui-react';
+import { useAuthenticator, Authenticator } from '@aws-amplify/ui-react';
 import { analyzeImage, analyzeDocument } from '@/lib/imageAnalysis';
 import { Amplify } from 'aws-amplify';
 import outputs from '../../amplify_outputs.json';
 
-export default function TestImageAnalysisPage() {
-  // Configure Amplify if not already configured
-  if (!Amplify.getConfig().Auth) {
-    console.log("Configuring Amplify in test page...");
-    Amplify.configure(outputs);
-    console.log("Amplify configured successfully in test page");
-  }
+// Configure Amplify at the page level
+if (!Amplify.getConfig().Auth) {
+  console.log("Configuring Amplify in test-image-analysis page...");
+  Amplify.configure(outputs);
+  console.log("Amplify configured successfully in test-image-analysis page");
+}
 
+function TestImageAnalysisContent() {
   // Get authentication state
   const { user } = useAuthenticator();
 
@@ -50,23 +50,6 @@ export default function TestImageAnalysisPage() {
       setLoading(false);
     }
   };
-
-  // Show authentication prompt if not logged in
-  if (!user) {
-    return (
-      <div className="max-w-4xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6">Image Analysis Test Page</h1>
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">
-            Please log in to use the image analysis test feature.
-          </p>
-          <p className="text-sm text-gray-500">
-            This feature requires authentication to access AWS services.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -121,5 +104,13 @@ export default function TestImageAnalysisPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function TestImageAnalysisPage() {
+  return (
+    <Authenticator>
+      <TestImageAnalysisContent />
+    </Authenticator>
   );
 }
