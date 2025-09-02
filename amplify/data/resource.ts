@@ -142,15 +142,14 @@ const schema = a.schema({
     .returns(a.ref('ScoredResponse'))
     .authorization(allow => allow.authenticated()),
 
-  // AI generation for image-based contest judging - sending actual image data
+  // AI generation for image-based contest judging - using image URL approach
   scoreImageContest: a.generation({
     aiModel: a.ai.model('Claude 3.5 Sonnet'),
-    systemPrompt: 'You are an expert contest judge specializing in image evaluation. You will be given an image and contest criteria. Analyze the actual image content and rate it based on the contest requirements. CRITICAL: You must base your rating ONLY on what you actually see in the image. If the image does not contain the required subject matter (e.g., a cute cats contest but the image shows dogs, walls, or other non-cat content), you MUST give a very low score (0-20 out of 100). Be extremely strict about matching contest requirements. Return a JSON object with: rating (integer based on maxScore), summary (string), reasoning (string), risks (array of strings), recommendations (array of strings). Return only valid JSON.',
+    systemPrompt: 'You are an expert contest judge specializing in image evaluation. You will be given an image URL and contest criteria. Analyze the actual image content and rate it based on the contest requirements. CRITICAL: You must base your rating ONLY on what you actually see in the image. If the image does not contain the required subject matter (e.g., a cute cats contest but the image shows dogs, walls, or other non-cat content), you MUST give a very low score (0-20 out of 100). Be extremely strict about matching contest requirements. Return a JSON object with: rating (integer based on maxScore), summary (string), reasoning (string), risks (array of strings), recommendations (array of strings). Return only valid JSON.',
     inferenceConfiguration: { temperature: 0.1, topP: 0.1, maxTokens: 1500 },
   })
     .arguments({
-      imageData: a.string().required(), // Base64 encoded image data
-      imageFormat: a.string().required(), // Image format (png, jpeg, etc.)
+      imageUrl: a.string().required(), // Image URL for analysis
       contestType: a.string().required(),
       contestPrompt: a.string().required(),
       judgingCriteria: a.string().array().required(),
