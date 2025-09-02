@@ -50,7 +50,6 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
     maxImageSize: 5242880, // 5MB
     allowedImageTypes: "image/jpeg,image/png,image/gif",
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isAdmin) return null;
 
@@ -150,8 +149,18 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
                 <Flex direction="column" gap="large">
                   {/* Error Display */}
                   {error && (
-                    <Alert variation="error" isDismissible onClose={() => setError(null)}>
-                      {error}
+                    <Alert variation="error" isDismissible>
+                      <Flex justifyContent="space-between" alignItems="center">
+                        <span>{error}</span>
+                        <Button
+                          variation="link"
+                          size="small"
+                          onClick={() => setError(null)}
+                          className="text-white hover:text-gray-200"
+                        >
+                          ✕
+                        </Button>
+                      </Flex>
                     </Alert>
                   )}
                   {/* Basic Information */}
