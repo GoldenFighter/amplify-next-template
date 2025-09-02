@@ -6,7 +6,7 @@ import { useAuthenticator } from "@aws-amplify/ui-react";
 import { client, useAIGeneration } from "../../../lib/client";
 import { getDisplayName, canSubmitToBoard, isAdmin, checkSubmissionFrequency } from "../../../lib/utils";
 import { Button } from "@aws-amplify/ui-react";
-import { analyzeImageWithBedrock } from "../../../lib/bedrockClient";
+import { analyzeImageWithBedrock, analyzeImageWithBedrockBase64 } from "../../../lib/bedrockClient";
 import SubmissionsView from "../../components/SubmissionsView";
 import ImageUpload from "../../components/ImageUpload";
 import { Amplify } from "aws-amplify";
@@ -417,6 +417,39 @@ export default function BoardPage() {
     }
   };
 
+  // Convert image URL to base64 for AI analysis
+  const convertImageToBase64 = async (imageUrl: string): Promise<string> => {
+    try {
+      console.log("Converting image to base64:", imageUrl);
+      
+      // Fetch the image
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.statusText}`);
+      }
+      
+      // Convert to blob
+      const blob = await response.blob();
+      
+      // Convert blob to base64
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result as string;
+          // Remove data URL prefix (e.g., "data:image/jpeg;base64,")
+          const base64Data = base64.split(',')[1];
+          console.log("Image converted to base64, length:", base64Data.length);
+          resolve(base64Data);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error: any) {
+      console.error("Error converting image to base64:", error);
+      throw new Error(`Failed to convert image to base64: ${error?.message || 'Unknown error'}`);
+    }
+  };
+
   useEffect(() => {
     const fetchBoardData = async () => {
       try {
@@ -674,22 +707,28 @@ export default function BoardPage() {
       if (board.contestType && board.contestPrompt && board.judgingCriteria && board.maxScore) {
         try {
           console.log("Starting AI analysis...");
-          console.log("Sending actual image URL to AI:", imageUrl);
+          console.log("Converting image to base64 for AI analysis...");
+          
+          // Convert image to base64 for AI analysis
+          const imageBase64 = await convertImageToBase64(imageUrl);
+          const imageFormat = imageType.split('/')[1] || 'jpeg'; // Extract format from MIME type
           
           console.log("Calling AI generation with parameters:", {
-            imageUrl: imageUrl,
+            imageFormat: imageFormat,
             contestType: board.contestType,
             contestPrompt: board.contestPrompt,
             judgingCriteria: board.judgingCriteria.filter(c => c !== null) as string[],
-            maxScore: board.maxScore
+            maxScore: board.maxScore,
+            imageDataLength: imageBase64.length
           });
 
-          // Try Amplify AI generation first
+          // Try Amplify AI generation with actual image data
           let result;
           try {
-            console.log("Attempting Amplify AI generation with image URL...");
+            console.log("Attempting Amplify AI generation with image data...");
             result = await client.generations.scoreImageContest({
-              imageUrl,
+              imageData: imageBase64,
+              imageFormat: imageFormat,
               contestType: board.contestType,
               contestPrompt: board.contestPrompt,
               judgingCriteria: board.judgingCriteria.filter(c => c !== null) as string[],
@@ -701,13 +740,16 @@ export default function BoardPage() {
             
             // Fallback to direct Bedrock integration
             try {
-              const bedrockResult = await analyzeImageWithBedrock({
-                imageUrl,
-                contestType: board.contestType,
-                contestPrompt: board.contestPrompt,
-                judgingCriteria: board.judgingCriteria.filter(c => c !== null) as string[],
-                maxScore: board.maxScore,
-              });
+              const bedrockResult = await analyzeImageWithBedrockBase64(
+                imageBase64,
+                imageType,
+                {
+                  contestType: board.contestType,
+                  contestPrompt: board.contestPrompt,
+                  judgingCriteria: board.judgingCriteria.filter(c => c !== null) as string[],
+                  maxScore: board.maxScore,
+                }
+              );
               
               // Convert Bedrock result to match Amplify format
               result = {
