@@ -1,5 +1,3 @@
-import { serverClient } from './amplifyServerClient';
-
 export interface ImageAnalysisOptions {
   analysisType?: 'general' | 'document' | 'art' | 'product' | 'medical';
   documentType?: string;
@@ -16,7 +14,7 @@ export interface ImageAnalysisResult {
 }
 
 /**
- * Analyze an image using Claude 3.5 Sonnet
+ * Analyze an image using Claude 3.5 Sonnet via Lambda function
  * @param imageUrl - URL of the image to analyze
  * @param options - Analysis options
  * @returns Promise with analysis result
@@ -28,44 +26,28 @@ export async function analyzeImage(
   try {
     const { analysisType, documentType, expectedFields, specificQuestions } = options;
 
-    // Determine which AI generation to use based on analysis type
-    let result;
-    let errors;
-
-    if (analysisType === 'document' || documentType) {
-      // Use document analysis
-      const { data, errors: docErrors } = await serverClient.analyzeDocument({
-        imageUrl,
-        documentType,
-        expectedFields,
-      });
-      result = data;
-      errors = docErrors;
-    } else {
-      // Use general image analysis
-      const { data, errors: imgErrors } = await serverClient.analyzeImage({
+    // Call the API route which invokes the Lambda function
+    const response = await fetch('/api/analyze-image', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         imageUrl,
         analysisType,
+        documentType,
+        expectedFields,
         specificQuestions,
-      });
-      result = data;
-      errors = imgErrors;
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Analysis failed');
     }
 
-    if (errors?.length) {
-      throw new Error(`Analysis failed: ${errors.join(', ')}`);
-    }
-
-    if (!result) {
-      throw new Error('No analysis result received');
-    }
-
-    return {
-      success: true,
-      data: result,
-      analysisType: analysisType || 'general',
-      timestamp: new Date().toISOString(),
-    };
+    return result;
 
   } catch (error) {
     console.error('Image analysis error:', error);

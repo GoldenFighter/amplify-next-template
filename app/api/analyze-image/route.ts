@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { serverClient } from '@/lib/amplifyServerClient';
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
+
+const lambdaClient = new LambdaClient({ region: process.env.AWS_REGION || 'us-east-1' });
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,54 +24,49 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Determine which AI generation to use based on analysis type
-    let result;
-    let errors;
+    // Prepare the payload for the Lambda function
+    const payload = {
+      imageUrl,
+      analysisType,
+      specificQuestions,
+      documentType,
+      expectedFields,
+    };
 
-    if (analysisType === 'document' || documentType) {
-      // Use document analysis
-      const { data, errors: docErrors } = await serverClient.analyzeDocument({
-        imageUrl,
-        documentType,
-        expectedFields,
+    // Invoke the Lambda function
+    const command = new InvokeCommand({
+      FunctionName: process.env.IMAGE_ANALYSIS_FUNCTION_NAME || 'imageAnalysis',
+      Payload: JSON.stringify(payload),
+    });
+
+    const response = await lambdaClient.send(command);
+    
+    if (response.Payload) {
+      const result = JSON.parse(new TextDecoder().decode(response.Payload));
+      
+      console.log("Image Analysis API: Lambda result:", result);
+
+      if (result.errorMessage) {
+        console.error("Image Analysis API: Lambda error:", result.errorMessage);
+        return NextResponse.json(
+          { error: result.errorMessage }, 
+          { status: 500 }
+        );
+      }
+
+      // Return the structured analysis result
+      return NextResponse.json({
+        success: true,
+        data: result,
+        analysisType: analysisType || 'general',
+        timestamp: new Date().toISOString(),
       });
-      result = data;
-      errors = docErrors;
     } else {
-      // Use general image analysis
-      const { data, errors: imgErrors } = await serverClient.analyzeImage({
-        imageUrl,
-        analysisType,
-        specificQuestions,
-      });
-      result = data;
-      errors = imgErrors;
-    }
-
-    console.log("Image Analysis API: AI generation result:", { result, errors });
-
-    if (errors?.length) {
-      console.error("Image Analysis API: AI generation errors:", errors);
       return NextResponse.json(
-        { error: errors }, 
-        { status: 400 }
-      );
-    }
-
-    if (!result) {
-      return NextResponse.json(
-        { error: 'No analysis result received' }, 
+        { error: 'No response from Lambda function' }, 
         { status: 500 }
       );
     }
-
-    // Return the structured analysis result
-    return NextResponse.json({
-      success: true,
-      data: result,
-      analysisType: analysisType || 'general',
-      timestamp: new Date().toISOString(),
-    });
 
   } catch (error) {
     console.error("Image Analysis API: Unexpected error:", error);

@@ -4,7 +4,7 @@ This document explains how to use the image analysis functionality that has been
 
 ## Overview
 
-The image analysis system uses AWS Amplify Gen 2 with Claude 3.5 Sonnet to analyze images and extract structured information. It supports both general image analysis and document processing (IDP) use cases.
+The image analysis system uses AWS Amplify Gen 2 with a Lambda function that invokes Claude 3.5 Sonnet to analyze images and extract structured information. It supports both general image analysis and document processing (IDP) use cases.
 
 ## Features
 
