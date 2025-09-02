@@ -129,7 +129,7 @@ const schema = a.schema({
   // Contest-specific AI generation for consistent judging
   scoreContest: a.generation({
     aiModel: a.ai.model('Claude 3 Haiku'),
-    systemPrompt: 'You are a contest judge. You will be given a contest type, prompt, judging criteria, and a submission. Rate the submission based on the criteria and return a JSON object with: rating (integer based on maxScore), summary (string), reasoning (string), risks (array of strings), recommendations (array of strings). Be strict and consistent in your judging. Return only valid JSON.',
+    systemPrompt: 'You are a contest judge. You will be given a contest type, prompt, judging criteria, and a submission. The submission may be text or a detailed image description. Rate the submission based on the criteria and return a JSON object with: rating (integer based on maxScore), summary (string), reasoning (string), risks (array of strings), recommendations (array of strings). Be strict and consistent in your judging. If the submission is an image description, base your rating ONLY on what is actually described in the image analysis. Return only valid JSON.',
     inferenceConfiguration: { temperature: 0.1, topP: 0.1, maxTokens: 1000 },
   })
     .arguments({
@@ -142,19 +142,18 @@ const schema = a.schema({
     .returns(a.ref('ScoredResponse'))
     .authorization(allow => allow.authenticated()),
 
-  // AI generation for image-based contest judging
+  // AI generation for image-based contest judging - sending actual image
   scoreImageContest: a.generation({
     aiModel: a.ai.model('Claude 3.5 Sonnet'),
-    systemPrompt: 'You are an expert contest judge specializing in image evaluation. You will be given a detailed analysis of an image and contest criteria. CRITICAL: You must base your rating ONLY on what is actually described in the image analysis. If the image analysis indicates the image does not contain the required subject matter (e.g., a cute cats contest but the image shows dogs, walls, or other non-cat content), you MUST give a very low score (0-20 out of 100). Do not make assumptions or rate based on what you think might be in the image. Only rate what is explicitly described in the analysis. Return a JSON object with: rating (integer based on maxScore), summary (string), reasoning (string), risks (array of strings), recommendations (array of strings). Be extremely strict about matching contest requirements. Return only valid JSON.',
+    systemPrompt: 'You are an expert contest judge specializing in image evaluation. You will be given an image and contest criteria. Analyze the actual image content and rate it based on the contest requirements. CRITICAL: You must base your rating ONLY on what you actually see in the image. If the image does not contain the required subject matter (e.g., a cute cats contest but the image shows dogs, walls, or other non-cat content), you MUST give a very low score (0-20 out of 100). Be extremely strict about matching contest requirements. Return a JSON object with: rating (integer based on maxScore), summary (string), reasoning (string), risks (array of strings), recommendations (array of strings). Return only valid JSON.',
     inferenceConfiguration: { temperature: 0.1, topP: 0.1, maxTokens: 1500 },
   })
     .arguments({
-      imageDescription: a.string().required(), // Description of the image content
+      imageUrl: a.string().required(), // S3 URL of the actual image
       contestType: a.string().required(),
       contestPrompt: a.string().required(),
       judgingCriteria: a.string().array().required(),
       maxScore: a.integer().required(),
-      prompt: a.string(), // Optional text prompt accompanying the image
     })
     .returns(a.ref('ScoredResponse'))
     .authorization(allow => allow.authenticated()),

@@ -6,6 +6,7 @@ import { useAuthenticator } from "@aws-amplify/ui-react";
 import { client, useAIGeneration } from "../../../lib/client";
 import { getDisplayName, canSubmitToBoard, isAdmin, checkSubmissionFrequency } from "../../../lib/utils";
 import { Button } from "@aws-amplify/ui-react";
+import { analyzeImageWithBedrock } from "../../../lib/bedrockClient";
 import SubmissionsView from "../../components/SubmissionsView";
 import ImageUpload from "../../components/ImageUpload";
 import { Amplify } from "aws-amplify";
@@ -673,30 +674,54 @@ export default function BoardPage() {
       if (board.contestType && board.contestPrompt && board.judgingCriteria && board.maxScore) {
         try {
           console.log("Starting AI analysis...");
-          
-          // Analyze the actual image content to create a unique description
-          const imageDescription = await analyzeImageContent(imageUrl, imageType, imageSize);
-          console.log("Image description generated:", imageDescription.substring(0, 200) + "...");
+          console.log("Sending actual image URL to AI:", imageUrl);
           
           console.log("Calling AI generation with parameters:", {
-            imageDescription: imageDescription.substring(0, 100) + "...",
+            imageUrl: imageUrl,
             contestType: board.contestType,
             contestPrompt: board.contestPrompt,
             judgingCriteria: board.judgingCriteria.filter(c => c !== null) as string[],
-            maxScore: board.maxScore,
-            prompt: null
+            maxScore: board.maxScore
           });
 
-          const result = await client.generations.scoreImageContest({
-            imageDescription,
-            contestType: board.contestType,
-            contestPrompt: board.contestPrompt,
-            judgingCriteria: board.judgingCriteria.filter(c => c !== null) as string[],
-            maxScore: board.maxScore,
-            prompt: null, // No text prompt for image-only submissions
-          });
+          // Try Amplify AI generation first
+          let result;
+          try {
+            console.log("Attempting Amplify AI generation with image URL...");
+            result = await client.generations.scoreImageContest({
+              imageUrl,
+              contestType: board.contestType,
+              contestPrompt: board.contestPrompt,
+              judgingCriteria: board.judgingCriteria.filter(c => c !== null) as string[],
+              maxScore: board.maxScore,
+            });
+            console.log("Amplify AI result received:", result);
+          } catch (amplifyError) {
+            console.log("Amplify AI generation failed, trying direct Bedrock:", amplifyError);
+            
+            // Fallback to direct Bedrock integration
+            try {
+              const bedrockResult = await analyzeImageWithBedrock({
+                imageUrl,
+                contestType: board.contestType,
+                contestPrompt: board.contestPrompt,
+                judgingCriteria: board.judgingCriteria.filter(c => c !== null) as string[],
+                maxScore: board.maxScore,
+              });
+              
+              // Convert Bedrock result to match Amplify format
+              result = {
+                data: bedrockResult,
+                errors: undefined
+              };
+              console.log("Bedrock AI result received:", result);
+            } catch (bedrockError) {
+              console.error("Both Amplify and Bedrock failed:", bedrockError);
+              throw bedrockError;
+            }
+          }
 
-          console.log("AI result received:", result);
+          console.log("Final AI result:", result);
           console.log("AI result data:", result.data);
           console.log("AI result errors:", result.errors);
 
