@@ -42,13 +42,19 @@ export async function getSiteStatistics(): Promise<SiteStatistics> {
     }
     if (submissionsResult.data) {
       submissionsResult.data.forEach(submission => {
-        if (submission.userEmail) uniqueUsers.add(submission.userEmail);
+        if (submission.ownerEmail) uniqueUsers.add(submission.ownerEmail);
       });
     }
     const activeUsers = uniqueUsers.size;
 
     // Get recent activity (simplified - in production you'd want an activity log)
-    const recentActivity = [];
+    const recentActivity: Array<{
+      id: string;
+      type: string;
+      description: string;
+      timestamp: string;
+      user: string;
+    }> = [];
     
     // Add recent board creations
     if (boardsResult.data) {
@@ -79,7 +85,7 @@ export async function getSiteStatistics(): Promise<SiteStatistics> {
           type: 'submission_added',
           description: `New submission to contest board`,
           timestamp: submission.createdAt || new Date().toISOString(),
-          user: submission.userEmail || 'unknown',
+          user: submission.ownerEmail || 'unknown',
         });
       });
     }
@@ -172,13 +178,13 @@ export async function getUserStatistics(userEmail: string) {
     });
     
     const submissionsResult = await client.models.Submission.list({
-      filter: { userEmail: { eq: userEmail } }
+      filter: { ownerEmail: { eq: userEmail } }
     });
 
     return {
       boardsCreated: boardsResult.data?.length || 0,
       submissionsMade: submissionsResult.data?.length || 0,
-      totalScore: submissionsResult.data?.reduce((sum, sub) => sum + (sub.score || 0), 0) || 0,
+      totalScore: submissionsResult.data?.reduce((sum, sub) => sum + (sub.result?.rating || 0), 0) || 0,
     };
   } catch (error) {
     console.error('Error getting user statistics:', error);
