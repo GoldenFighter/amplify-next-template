@@ -13,7 +13,6 @@ import {
   Badge,
   Alert,
   Tabs,
-  TabItem,
   Table,
   TableHead,
   TableBody,
@@ -32,7 +31,6 @@ type SiteConfig = SiteConfiguration;
 export default function OwnerDashboard() {
   const { currentTheme, currentThemeName, setTheme, availableThemes, isOwner, colorMode, toggleColorMode } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
   const [siteStats, setSiteStats] = useState<SiteStats | null>(null);
   const [siteConfig, setSiteConfig] = useState<SiteConfig>({
     allowNewRegistrations: true,
@@ -169,11 +167,15 @@ export default function OwnerDashboard() {
               <Divider />
 
               {/* Tabs */}
-              <Tabs
-                currentIndex={['overview', 'theming', 'configuration', 'analytics'].indexOf(activeTab)}
-                onChange={(index) => setActiveTab(['overview', 'theming', 'configuration', 'analytics'][index])}
-              >
-                <TabItem title="Overview">
+              <Tabs.Container defaultValue="overview">
+                <Tabs.List>
+                  <Tabs.Item value="overview">Overview</Tabs.Item>
+                  <Tabs.Item value="theming">Theming</Tabs.Item>
+                  <Tabs.Item value="configuration">Configuration</Tabs.Item>
+                  <Tabs.Item value="analytics">Analytics</Tabs.Item>
+                </Tabs.List>
+                
+                <Tabs.Panel value="overview">
                   <Flex direction="column" gap="1rem">
                     <Heading level={4}>Site Overview</Heading>
                     
@@ -246,9 +248,9 @@ export default function OwnerDashboard() {
                       <Alert variation="info">Loading site statistics...</Alert>
                     )}
                   </Flex>
-                </TabItem>
+                </Tabs.Panel>
 
-                <TabItem title="Theming">
+                <Tabs.Panel value="theming">
                   <Flex direction="column" gap="1rem">
                     <Heading level={4}>Site Theming</Heading>
                     
@@ -328,9 +330,9 @@ export default function OwnerDashboard() {
                       </Flex>
                     </div>
                   </Flex>
-                </TabItem>
+                </Tabs.Panel>
 
-                <TabItem title="Configuration">
+                <Tabs.Panel value="configuration">
                   <Flex direction="column" gap="1rem">
                     <Heading level={4}>Site Configuration</Heading>
                     
@@ -417,9 +419,9 @@ export default function OwnerDashboard() {
                       Save Configuration
                     </Button>
                   </Flex>
-                </TabItem>
+                </Tabs.Panel>
 
-                <TabItem title="Analytics">
+                <Tabs.Panel value="analytics">
                   <Flex direction="column" gap="1rem">
                     <Heading level={4}>Site Analytics</Heading>
                     
@@ -443,8 +445,8 @@ export default function OwnerDashboard() {
                       </Flex>
                     </Card>
                   </Flex>
-                </TabItem>
-              </Tabs>
+                </Tabs.Panel>
+              </Tabs.Container>
             </Flex>
           </Card>
         </div>
