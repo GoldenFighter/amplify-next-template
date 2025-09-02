@@ -37,7 +37,7 @@ export async function getSiteStatistics(): Promise<SiteStatistics> {
     const uniqueUsers = new Set<string>();
     if (boardsResult.data) {
       boardsResult.data.forEach(board => {
-        if (board.ownerEmail) uniqueUsers.add(board.ownerEmail);
+        if (board.createdBy) uniqueUsers.add(board.createdBy);
       });
     }
     if (submissionsResult.data) {
@@ -62,7 +62,7 @@ export async function getSiteStatistics(): Promise<SiteStatistics> {
           type: 'board_created',
           description: `New contest board created: "${board.name}"`,
           timestamp: board.createdAt || new Date().toISOString(),
-          user: board.ownerEmail || 'unknown',
+          user: board.createdBy || 'unknown',
         });
       });
     }
@@ -168,7 +168,7 @@ export function canSubmitToBoard(userEmail: string, currentSubmissionCount: numb
 export async function getUserStatistics(userEmail: string) {
   try {
     const boardsResult = await client.models.Board.list({
-      filter: { ownerEmail: { eq: userEmail } }
+      filter: { createdBy: { eq: userEmail } }
     });
     
     const submissionsResult = await client.models.Submission.list({
