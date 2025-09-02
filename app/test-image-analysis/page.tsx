@@ -1,9 +1,22 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useAuthenticator } from '@aws-amplify/ui-react';
 import { analyzeImage, analyzeDocument } from '@/lib/imageAnalysis';
+import { Amplify } from 'aws-amplify';
+import outputs from '../../amplify_outputs.json';
 
 export default function TestImageAnalysisPage() {
+  // Configure Amplify if not already configured
+  if (!Amplify.getConfig().Auth) {
+    console.log("Configuring Amplify in test page...");
+    Amplify.configure(outputs);
+    console.log("Amplify configured successfully in test page");
+  }
+
+  // Get authentication state
+  const { user } = useAuthenticator();
+
   const [testUrl, setTestUrl] = useState('https://via.placeholder.com/400x300/0066CC/FFFFFF?text=Test+Image');
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -38,9 +51,29 @@ export default function TestImageAnalysisPage() {
     }
   };
 
+  // Show authentication prompt if not logged in
+  if (!user) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <h1 className="text-3xl font-bold mb-6">Image Analysis Test Page</h1>
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">
+            Please log in to use the image analysis test feature.
+          </p>
+          <p className="text-sm text-gray-500">
+            This feature requires authentication to access AWS services.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Image Analysis Test Page</h1>
+      <div className="mb-4 text-sm text-gray-500">
+        Logged in as: {user.signInDetails?.loginId || user.username}
+      </div>
       
       <div className="space-y-4">
         <div>
