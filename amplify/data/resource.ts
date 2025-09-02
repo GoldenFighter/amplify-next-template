@@ -39,6 +39,7 @@ const schema = a.schema({
       allowImageSubmissions: a.boolean().default(false), // Whether this board accepts image submissions
       maxImageSize: a.integer().default(5242880), // 5MB default
       allowedImageTypes: a.string().array(), // Allowed image formats
+      useConversationJudging: a.boolean().default(false), // Demo feature for conversation-based judging
     })
     .authorization(allow => [
       allow.owner(), // Creator can do everything
@@ -158,6 +159,27 @@ const schema = a.schema({
     })
     .returns(a.ref('ScoredResponse'))
     .authorization(allow => allow.authenticated()),
+
+  // AI Conversation for persistent judging context
+  ContestConversation: a
+    .model({
+      boardId: a.string().required(),
+      boardName: a.string().required(),
+      contestType: a.string().required(),
+      contestPrompt: a.string().required(),
+      judgingCriteria: a.string().array().required(),
+      maxScore: a.integer().required(),
+      conversationId: a.string(), // Amplify conversation ID
+      isActive: a.boolean().default(true),
+      totalSubmissions: a.integer().default(0),
+      averageScore: a.float(),
+      lastSubmissionDate: a.datetime(),
+      ownerEmail: a.string().required(),
+    })
+    .authorization(allow => [
+      allow.owner(), // Owner can do everything
+      allow.authenticated().to(['read']), // All authenticated users can read
+    ]),
 
   // Legacy Analysis model - keeping for backward compatibility
   Analysis: a

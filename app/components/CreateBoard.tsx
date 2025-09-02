@@ -29,11 +29,30 @@ interface CreateBoardProps {
   userEmail: string;
 }
 
+interface FormData {
+  name: string;
+  description: string;
+  isPublic: boolean;
+  maxSubmissionsPerUser: number;
+  allowedEmails: string;
+  expiresAt: string;
+  submissionFrequency: "daily" | "weekly" | "monthly" | "unlimited";
+  isActive: boolean;
+  contestPrompt: string;
+  contestType: string;
+  judgingCriteria: string;
+  maxScore: number;
+  allowImageSubmissions: boolean;
+  maxImageSize: number;
+  allowedImageTypes: string;
+  useConversationJudging: boolean; // Demo feature flag
+}
+
 export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: CreateBoardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: "",
     description: "",
     isPublic: false,
@@ -49,6 +68,7 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
     allowImageSubmissions: false,
     maxImageSize: 5242880, // 5MB
     allowedImageTypes: "image/jpeg,image/png,image/gif",
+    useConversationJudging: false, // New option for conversation-based judging
   });
 
   if (!isAdmin) return null;
@@ -99,6 +119,7 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
         allowImageSubmissions: formData.allowImageSubmissions,
         maxImageSize: formData.maxImageSize,
         allowedImageTypes: allowedImageTypes.length > 0 ? allowedImageTypes : null,
+        useConversationJudging: formData.useConversationJudging,
       });
 
       // Reset form and close modal
@@ -109,7 +130,7 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
         maxSubmissionsPerUser: 2,
         allowedEmails: "",
         expiresAt: "",
-        submissionFrequency: "unlimited",
+        submissionFrequency: "unlimited" as "daily" | "weekly" | "monthly" | "unlimited",
         isActive: true,
         contestPrompt: "",
         contestType: "",
@@ -118,6 +139,7 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
         allowImageSubmissions: false,
         maxImageSize: 5242880,
         allowedImageTypes: "image/jpeg,image/png,image/gif",
+        useConversationJudging: false, // Reset conversation judging flag
       });
       setIsOpen(false);
       onBoardCreated();
@@ -327,6 +349,23 @@ export default function CreateBoard({ onBoardCreated, isAdmin, userEmail }: Crea
                             />
                           </Flex>
                         </Flex>
+                      )}
+
+                      <SwitchField
+                        label="🤖 Use AI Conversation Judging (Demo)"
+                        checked={formData.useConversationJudging}
+                        onChange={(e) => setFormData({ ...formData, useConversationJudging: e.target.checked })}
+                        descriptiveText="Enable persistent AI conversation that learns from previous submissions for more contextual judging"
+                        isDisabled={!formData.allowImageSubmissions}
+                      />
+
+                      {formData.useConversationJudging && (
+                        <Alert variation="info">
+                          <div style={{ fontSize: '0.875rem' }}>
+                            <strong>Demo Feature:</strong> This board will use a persistent AI conversation that maintains context across submissions. 
+                            The AI will learn from previous judgments to provide more consistent and contextual scoring.
+                          </div>
+                        </Alert>
                       )}
                     </Flex>
                   </div>

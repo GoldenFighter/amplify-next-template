@@ -6,9 +6,10 @@ import { useAuthenticator } from "@aws-amplify/ui-react";
 import { client, useAIGeneration } from "../../../lib/client";
 import { getDisplayName, canSubmitToBoard, isAdmin, checkSubmissionFrequency } from "../../../lib/utils";
 import { Button } from "@aws-amplify/ui-react";
-import { analyzeImageWithBedrock, analyzeImageWithBedrockBase64 } from "../../../lib/bedrockClient";
+
 import SubmissionsView from "../../components/SubmissionsView";
 import ImageUpload from "../../components/ImageUpload";
+import ConversationJudging from "../../components/ConversationJudging";
 import { Amplify } from "aws-amplify";
 import outputs from "../../../amplify_outputs.json";
 
@@ -722,46 +723,17 @@ export default function BoardPage() {
             imageDataLength: imageBase64.length
           });
 
-          // Try Amplify AI generation with actual image data
-          let result;
-          try {
-            console.log("Attempting Amplify AI generation with image data...");
-            result = await client.generations.scoreImageContest({
-              imageData: imageBase64,
-              imageFormat: imageFormat,
-              contestType: board.contestType,
-              contestPrompt: board.contestPrompt,
-              judgingCriteria: board.judgingCriteria.filter(c => c !== null) as string[],
-              maxScore: board.maxScore,
-            });
-            console.log("Amplify AI result received:", result);
-          } catch (amplifyError) {
-            console.log("Amplify AI generation failed, trying direct Bedrock:", amplifyError);
-            
-            // Fallback to direct Bedrock integration
-            try {
-              const bedrockResult = await analyzeImageWithBedrockBase64(
-                imageBase64,
-                imageType,
-                {
-                  contestType: board.contestType,
-                  contestPrompt: board.contestPrompt,
-                  judgingCriteria: board.judgingCriteria.filter(c => c !== null) as string[],
-                  maxScore: board.maxScore,
-                }
-              );
-              
-              // Convert Bedrock result to match Amplify format
-              result = {
-                data: bedrockResult,
-                errors: undefined
-              };
-              console.log("Bedrock AI result received:", result);
-            } catch (bedrockError) {
-              console.error("Both Amplify and Bedrock failed:", bedrockError);
-              throw bedrockError;
-            }
-          }
+          // Use Amplify AI generation with actual image data
+          console.log("Attempting Amplify AI generation with image data...");
+          const result = await client.generations.scoreImageContest({
+            imageData: imageBase64,
+            imageFormat: imageFormat,
+            contestType: board.contestType,
+            contestPrompt: board.contestPrompt,
+            judgingCriteria: board.judgingCriteria.filter(c => c !== null) as string[],
+            maxScore: board.maxScore,
+          });
+          console.log("Amplify AI result received:", result);
 
           console.log("Final AI result:", result);
           console.log("AI result data:", result.data);
@@ -953,16 +925,36 @@ export default function BoardPage() {
               {/* Image Submission Only */}
               {board.allowImageSubmissions ? (
                 <div className="border border-gray-200 rounded-lg p-4">
-                  <h3 className="text-lg font-medium mb-3">📸 Image Submission</h3>
-                  <ImageUpload
-                    boardId={board.id}
-                    boardName={board.name}
-                    userEmail={loginId}
-                    maxImageSize={board.maxImageSize || 5242880}
-                    allowedImageTypes={board.allowedImageTypes?.filter(t => t !== null) as string[] || ['image/jpeg', 'image/png', 'image/gif']}
-                    onImageUploaded={handleImageUpload}
-                    onError={(error) => alert(error)}
-                  />
+                  <h3 className="text-lg font-medium mb-3">
+                    {board.useConversationJudging ? "🤖 AI Conversation Judging" : "📸 Image Submission"}
+                  </h3>
+                  
+                  {board.useConversationJudging ? (
+                    <ConversationJudging
+                      boardId={board.id}
+                      boardName={board.name}
+                      contestType={board.contestType || ""}
+                      contestPrompt={board.contestPrompt || ""}
+                      judgingCriteria={board.judgingCriteria?.filter(c => c !== null) as string[] || []}
+                      maxScore={board.maxScore || 100}
+                      userEmail={loginId}
+                      onSubmissionComplete={(result) => {
+                        alert("Image judged successfully! Check the submissions below.");
+                        window.location.reload();
+                      }}
+                      onError={(error) => alert(error)}
+                    />
+                  ) : (
+                    <ImageUpload
+                      boardId={board.id}
+                      boardName={board.name}
+                      userEmail={loginId}
+                      maxImageSize={board.maxImageSize || 5242880}
+                      allowedImageTypes={board.allowedImageTypes?.filter(t => t !== null) as string[] || ['image/jpeg', 'image/png', 'image/gif']}
+                      onImageUploaded={handleImageUpload}
+                      onError={(error) => alert(error)}
+                    />
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
