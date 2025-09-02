@@ -31,7 +31,7 @@ The image analysis system uses AWS Amplify Gen 2 with a Lambda function that inv
 npx ampx sandbox
 ```
 
-This will deploy your Amplify backend with the new AI generation functions.
+This will deploy your Amplify backend with the Lambda function for image analysis.
 
 ### 2. Access the Image Analysis Page
 Navigate to `/image-analysis` in your application to use the interactive image analyzer.
@@ -75,23 +75,24 @@ const docResult = await analyzeDocument('https://example.com/document.jpg', 'for
 ]);
 ```
 
-#### Using Amplify AI Generation Directly
+#### Using Lambda Function Directly
 ```typescript
-import { serverClient } from '@/lib/amplifyServerClient';
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
+
+const lambdaClient = new LambdaClient({ region: 'us-east-1' });
 
 // General analysis
-const { data, errors } = await serverClient.analyzeImage({
-  imageUrl: 'https://example.com/image.jpg',
-  analysisType: 'general',
-  specificQuestions: ['What objects are visible?'],
+const command = new InvokeCommand({
+  FunctionName: 'imageAnalysis',
+  Payload: JSON.stringify({
+    imageUrl: 'https://example.com/image.jpg',
+    analysisType: 'general',
+    specificQuestions: ['What objects are visible?'],
+  }),
 });
 
-// Document analysis
-const { data, errors } = await serverClient.analyzeDocument({
-  imageUrl: 'https://example.com/document.jpg',
-  documentType: 'invoice',
-  expectedFields: ['total', 'date', 'vendor'],
-});
+const response = await lambdaClient.send(command);
+const result = JSON.parse(new TextDecoder().decode(response.Payload));
 ```
 
 ## Response Format
@@ -243,9 +244,9 @@ Enable debug logging by checking the browser console and server logs for detaile
 ## Security
 
 - Images are processed through AWS Bedrock (secure and compliant)
-- No image data is stored permanently (only during processing)
+- Images are temporarily stored in S3 with signed URLs (1 hour expiration)
 - All requests require authentication
-- Images are uploaded to your private S3 bucket
+- Images are uploaded to your private S3 bucket with proper access controls
 
 ## Next Steps
 

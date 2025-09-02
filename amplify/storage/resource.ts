@@ -6,5 +6,8 @@ export const storage = defineStorage({
     'contest-submissions/*': [
       allow.authenticated.to(['read', 'write', 'delete']),
     ],
+    'image-analysis/*': [
+      allow.authenticated.to(['read', 'write', 'delete']),
+    ],
   })
 });

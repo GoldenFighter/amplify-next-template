@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@aws-amplify/ui-react';
-import { uploadData } from 'aws-amplify/storage';
+import { uploadData, getUrl } from 'aws-amplify/storage';
 
 interface ImageAnalysisResult {
   success: boolean;
@@ -74,8 +74,15 @@ export default function ImageAnalyzer({
         },
       }).result;
 
-      // Return the full S3 URL
-      return `https://${result.bucket}.s3.${result.region}.amazonaws.com/${result.key}`;
+      // Get the public URL for the uploaded file
+      const urlResult = await getUrl({
+        key: result.key,
+        options: {
+          expiresIn: 3600, // 1 hour
+        },
+      });
+
+      return urlResult.url.toString();
     } catch (error) {
       console.error('Error uploading image:', error);
       throw new Error('Failed to upload image');
