@@ -11,7 +11,7 @@ import {
   Badge,
   Divider,
 } from '@aws-amplify/ui-react';
-import { Storage } from 'aws-amplify';
+import { uploadData, downloadData } from 'aws-amplify/storage';
 
 interface ImageUploadProps {
   boardId: string;
@@ -114,17 +114,26 @@ export default function ImageUpload({
       const fileExtension = selectedFile.name.split('.').pop();
       const imageKey = `contest-submissions/${boardId}/${timestamp}-${randomId}.${fileExtension}`;
 
-      // Upload to S3 using Amplify Storage
-      const result = await Storage.put(imageKey, selectedFile, {
-        contentType: selectedFile.type,
-        progressCallback: (progress) => {
-          const percentage = Math.round((progress.loaded / progress.total) * 100);
-          setUploadProgress(percentage);
+      // Upload to S3 using Amplify Gen2 Storage API
+      const result = await uploadData({
+        path: imageKey,
+        data: selectedFile,
+        options: {
+          contentType: selectedFile.type,
+          onProgress: (progress) => {
+            const percentage = Math.round((progress.transferredBytes / progress.totalBytes) * 100);
+            setUploadProgress(percentage);
+          },
         },
-      });
+      }).result;
 
-      // Get the public URL
-      const imageUrl = await Storage.get(imageKey);
+      // Get the public URL using the new API
+      const downloadResult = await downloadData({
+        path: imageKey,
+      }).result;
+
+      // Extract the URL from the download result
+      const imageUrl = downloadResult.toString();
 
       // Call the callback with upload details
       onImageUploaded(imageUrl, imageKey, selectedFile.size, selectedFile.type);
