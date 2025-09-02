@@ -19,12 +19,13 @@ import '@aws-amplify/ui-react/styles.css';
 import { getDisplayName } from "../../lib/utils";
 
 // Custom ImageDisplay component that uses Amplify Storage
-const ImageDisplay = ({ imageKey, alt, className, onClick, fallbackSrc }: {
+const ImageDisplay = ({ imageKey, alt, className, onClick, fallbackSrc, maxHeight = '192px' }: {
   imageKey: string;
   alt: string;
   className?: string;
   onClick?: () => void;
   fallbackSrc?: string;
+  maxHeight?: string;
 }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,7 +60,7 @@ const ImageDisplay = ({ imageKey, alt, className, onClick, fallbackSrc }: {
 
   if (loading) {
     return (
-      <div className={`${className} bg-gray-200 flex items-center justify-center`}>
+      <div className="w-full bg-gray-200 flex items-center justify-center rounded-lg border border-gray-200" style={{ height: maxHeight }}>
         <div className="text-gray-500 text-sm">Loading...</div>
       </div>
     );
@@ -67,7 +68,7 @@ const ImageDisplay = ({ imageKey, alt, className, onClick, fallbackSrc }: {
 
   if (error || !imageUrl) {
     return (
-      <div className={`${className} bg-gray-200 flex items-center justify-center`}>
+      <div className="w-full bg-gray-200 flex items-center justify-center rounded-lg border border-gray-200" style={{ height: maxHeight }}>
         <div className="text-gray-500 text-sm">Image not available</div>
       </div>
     );
@@ -80,6 +81,7 @@ const ImageDisplay = ({ imageKey, alt, className, onClick, fallbackSrc }: {
       className={className}
       onClick={onClick}
       onError={() => setError(true)}
+      style={{ maxHeight: maxHeight, width: '100%', objectFit: 'cover' }}
     />
   );
 };
@@ -397,7 +399,8 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
                   <ImageDisplay
                     imageKey={submission.imageKey}
                     alt="Submission"
-                    className="w-full h-auto max-h-48 sm:max-h-56 md:max-h-64 rounded-lg border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer object-cover"
+                    className="w-full rounded-lg border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                    maxHeight="200px"
                     onClick={() => {
                       // Open image in new tab for full view
                       if (submission.imageUrl) {
@@ -850,7 +853,8 @@ export default function SubmissionsView({ boardId, boardName, userEmail, isAdmin
                       <ImageDisplay
                         imageKey={submission.imageKey}
                         alt="Submission"
-                        className="w-full h-32 sm:h-40 md:h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                        className="w-full object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                        maxHeight="128px"
                         onClick={() => {
                           if (submission.imageUrl) {
                             window.open(submission.imageUrl, '_blank');

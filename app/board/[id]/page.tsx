@@ -560,7 +560,7 @@ export default function BoardPage() {
   const boardActive = isBoardActive(board);
 
   return (
-    <main className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-8 min-h-screen">
+    <main className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
       {/* Header */}
       <div className="mb-8">
         <button
