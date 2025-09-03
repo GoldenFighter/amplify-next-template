@@ -1,7 +1,16 @@
 "use client"
 
 import { Authenticator } from "@aws-amplify/ui-react";
+import { Amplify } from "aws-amplify";
+import outputs from "../amplify_outputs.json";
 import { PicFightThemeProvider } from "../lib/ThemeContext";
+
+// Configure Amplify on the client side
+if (!Amplify.getConfig().Auth) {
+  console.log("Configuring Amplify in AuthenticatorWrapper...");
+  Amplify.configure(outputs);
+  console.log("Amplify configured successfully in AuthenticatorWrapper");
+}
 
 export default function AuthenticatorWrapper({
   children,
