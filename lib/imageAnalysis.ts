@@ -56,6 +56,7 @@ export interface ImageAnalysisOptions {
   documentType?: string;
   expectedFields?: string[];
   specificQuestions?: string[];
+  metadata?: any; // Optional image metadata
 }
 
 export interface ImageAnalysisResult {
@@ -77,7 +78,7 @@ export async function analyzeImage(
   options: ImageAnalysisOptions = {}
 ): Promise<ImageAnalysisResult> {
   try {
-    const { analysisType, documentType, expectedFields, specificQuestions } = options;
+    const { analysisType, documentType, expectedFields, specificQuestions, metadata } = options;
 
     // Use the client-side Data client (Amplify Gen 2 best practice)
     const client = generateClient<Schema>();
@@ -87,6 +88,7 @@ export async function analyzeImage(
       documentType,
       expectedFields,
       specificQuestions,
+      metadata,
     });
 
     if (errors?.length) {

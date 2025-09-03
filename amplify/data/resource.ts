@@ -183,6 +183,7 @@ const schema = a.schema({
       specificQuestions: a.string().array(),
       documentType: a.string(),
       expectedFields: a.string().array(),
+      metadata: a.json(), // Optional image metadata for enhanced analysis
     })
     .returns(a.json())
     .authorization(allow => [allow.authenticated()])

@@ -19,7 +19,7 @@ export const handler: Schema["analyzeImage"]["functionHandler"] = async (event) 
   
   try {
     // Get arguments from the event (typed from schema)
-    const { imageUrl, analysisType, specificQuestions, documentType, expectedFields } = event.arguments;
+    const { imageUrl, analysisType, specificQuestions, documentType, expectedFields, metadata } = event.arguments;
 
     console.log('Parsed request arguments:', {
       imageUrl,
@@ -48,7 +48,8 @@ export const handler: Schema["analyzeImage"]["functionHandler"] = async (event) 
     const userPrompt = createUserPrompt(
       analysisType || undefined, 
       specificQuestions?.filter(question => question !== null) || undefined, 
-      expectedFields?.filter(field => field !== null) || undefined
+      expectedFields?.filter(field => field !== null) || undefined,
+      metadata
     );
     
     console.log('System prompt:', systemPrompt);
@@ -199,7 +200,7 @@ function createSystemPrompt(analysisType?: string, documentType?: string, expect
   return `You are an expert image analyst with advanced computer vision capabilities. Analyze the provided image and return a comprehensive JSON object with the following structure: { "objects": [{"name": "string", "confidence": "number", "description": "string"}], "scene": {"description": "string", "setting": "string", "mood": "string"}, "text": {"detected": "boolean", "content": "string", "language": "string"}, "colors": {"dominant": ["string"], "palette": ["string"]}, "composition": {"ruleOfThirds": "boolean", "symmetry": "boolean", "leadingLines": "boolean"}, "technical": {"quality": "string", "lighting": "string", "focus": "string"}, "summary": "string", "tags": ["string"], "metadata": {"estimatedDate": "string", "location": "string", "camera": "string"}}. Be thorough and accurate in your analysis. Return only valid JSON.`;
 }
 
-function createUserPrompt(analysisType?: string, specificQuestions?: string[], expectedFields?: string[]): string {
+function createUserPrompt(analysisType?: string, specificQuestions?: string[], expectedFields?: string[], metadata?: any): string {
   let prompt = 'Please analyze this image and provide a comprehensive analysis.';
   
   if (analysisType) {
@@ -212,6 +213,34 @@ function createUserPrompt(analysisType?: string, specificQuestions?: string[], e
   
   if (expectedFields && expectedFields.length > 0) {
     prompt += ` Pay special attention to extracting these fields: ${expectedFields.join(', ')}.`;
+  }
+  
+  // Add metadata context if available
+  if (metadata) {
+    prompt += '\n\nAdditional context from image metadata:';
+    if (metadata.fileName) prompt += `\n- File name: ${metadata.fileName}`;
+    if (metadata.fileSize) prompt += `\n- File size: ${Math.round(metadata.fileSize / 1024)}KB`;
+    if (metadata.exifData?.make && metadata.exifData?.model) {
+      prompt += `\n- Camera: ${metadata.exifData.make} ${metadata.exifData.model}`;
+    }
+    if (metadata.exifData?.software) {
+      prompt += `\n- Software: ${metadata.exifData.software}`;
+    }
+    if (metadata.exifData?.dateTime) {
+      prompt += `\n- Taken: ${metadata.exifData.dateTime}`;
+    }
+    if (metadata.exifData?.image?.width && metadata.exifData?.image?.height) {
+      prompt += `\n- Resolution: ${metadata.exifData.image.width}×${metadata.exifData.image.height}`;
+    }
+    if (metadata.exifData?.gps?.latitude && metadata.exifData?.gps?.longitude) {
+      prompt += `\n- Location: ${metadata.exifData.gps.latitude.toFixed(6)}, ${metadata.exifData.gps.longitude.toFixed(6)}`;
+    }
+    if (metadata.exifData?.isRecent !== undefined) {
+      prompt += `\n- Recent photo: ${metadata.exifData.isRecent ? 'Yes' : 'No'}`;
+    }
+    if (metadata.exifData?.validationScore !== undefined) {
+      prompt += `\n- Validation score: ${metadata.exifData.validationScore}/100`;
+    }
   }
   
   return prompt;
