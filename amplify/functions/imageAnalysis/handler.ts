@@ -8,8 +8,8 @@ const bedrockClient = new BedrockRuntimeClient({
 });
 const s3Client = new S3Client({ region: process.env.BEDROCK_REGION || 'eu-west-1' });
 
-// Claude 3.5 Sonnet model ID
-const MODEL_ID = 'anthropic.claude-3-5-sonnet-20240620-v1:0';
+// Claude 3 Sonnet model ID (from AWS documentation)
+const MODEL_ID = 'anthropic.claude-3-sonnet-20240229-v1:0';
 
 export const handler: Schema["analyzeImage"]["functionHandler"] = async (event) => {
   const startTime = Date.now();
@@ -54,21 +54,15 @@ export const handler: Schema["analyzeImage"]["functionHandler"] = async (event) 
     console.log('System prompt:', systemPrompt);
     console.log('User prompt:', userPrompt);
 
-    // Prepare the request for Claude
+    // Prepare the request for Claude (following AWS documentation structure)
     const requestBody = {
       anthropic_version: 'bedrock-2023-05-31',
       max_tokens: 2000,
-      temperature: analysisType === 'document' ? 0.1 : 0.2,
-      top_p: analysisType === 'document' ? 0.1 : 0.9,
       system: systemPrompt,
       messages: [
         {
           role: 'user',
           content: [
-            {
-              type: 'text',
-              text: userPrompt,
-            },
             {
               type: 'image',
               source: {
@@ -76,6 +70,10 @@ export const handler: Schema["analyzeImage"]["functionHandler"] = async (event) 
                 media_type: 'image/jpeg',
                 data: imageBase64,
               },
+            },
+            {
+              type: 'text',
+              text: userPrompt,
             },
           ],
         },
@@ -95,6 +93,12 @@ export const handler: Schema["analyzeImage"]["functionHandler"] = async (event) 
     
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
     console.log('Claude response body:', JSON.stringify(responseBody, null, 2));
+    
+    // Check for errors in the response
+    if (responseBody.error) {
+      console.error('Claude API error:', responseBody.error);
+      throw new Error(`Claude API error: ${responseBody.error.message || 'Unknown error'}`);
+    }
     
     // Extract the analysis result
     const analysisResult = responseBody.content[0].text;
