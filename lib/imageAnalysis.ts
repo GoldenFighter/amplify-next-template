@@ -47,8 +47,11 @@ export async function analyzeImage(
       throw new Error('No analysis result received');
     }
 
+    console.log('Raw Lambda response:', JSON.stringify(data, null, 2));
+    
     // Extract the actual data from the Lambda response
     const resultData = data?.data || data;
+    console.log('Extracted result data:', JSON.stringify(resultData, null, 2));
     
     return {
       success: true,

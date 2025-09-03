@@ -130,6 +130,7 @@ export default function ImageAnalyzer({
 
       // Analyze the image
       const result = await analyzeImage(imageUrl);
+      console.log('Analysis result received:', JSON.stringify(result, null, 2));
       
       setAnalysisResult(result);
       onAnalysisComplete?.(result);
@@ -281,9 +282,19 @@ export default function ImageAnalyzer({
           <h3 className="font-semibold text-green-800 mb-2">Analysis Results</h3>
           <div className="text-sm text-green-700 mb-2">
             Analysis Type: {analysisResult.analysisType} | 
-            Timestamp: {new Date(analysisResult.timestamp || '').toLocaleString()}
+            Timestamp: {new Date(analysisResult.timestamp || '').toLocaleString()} |
+            Success: {analysisResult.success ? 'Yes' : 'No'}
           </div>
-          {analysisResult.data && formatAnalysisResult(analysisResult.data)}
+          <div className="mb-4 p-2 bg-gray-100 rounded text-xs">
+            <strong>Debug - analysisResult:</strong>
+            <pre>{JSON.stringify(analysisResult, null, 2)}</pre>
+          </div>
+          {analysisResult.success && analysisResult.data && formatAnalysisResult(analysisResult.data)}
+          {!analysisResult.success && analysisResult.error && (
+            <div className="text-red-600">
+              <strong>Error:</strong> {analysisResult.error}
+            </div>
+          )}
         </div>
       )}
     </div>
