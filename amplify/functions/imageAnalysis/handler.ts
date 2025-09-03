@@ -9,7 +9,7 @@ const bedrockClient = new BedrockRuntimeClient({
 const s3Client = new S3Client({ region: process.env.BEDROCK_REGION || 'eu-west-1' });
 
 // Claude 3.5 Sonnet model ID
-const MODEL_ID = 'anthropic.claude-3-5-sonnet-20241022-v2:0';
+const MODEL_ID = 'anthropic.claude-3-5-sonnet-20240620-v1:0';
 
 export const handler: Schema["analyzeImage"]["functionHandler"] = async (event) => {
   const startTime = Date.now();
