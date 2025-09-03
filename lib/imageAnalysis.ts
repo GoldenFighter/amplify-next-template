@@ -47,9 +47,12 @@ export async function analyzeImage(
       throw new Error('No analysis result received');
     }
 
+    // Extract the actual data from the Lambda response
+    const resultData = data?.data || data;
+    
     return {
       success: true,
-      data,
+      data: resultData,
       analysisType: analysisType || 'general',
       timestamp: new Date().toISOString(),
     };
