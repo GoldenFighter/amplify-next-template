@@ -84,7 +84,27 @@ export async function analyzeImage(
     const client = generateClient<Schema>();
     
     // Ensure metadata is properly serialized for GraphQL
-    const serializedMetadata = metadata ? JSON.parse(JSON.stringify(metadata)) : null;
+    // Convert Date objects to ISO strings and clean up the metadata
+    const serializedMetadata = metadata ? {
+      fileName: metadata.fileName,
+      fileSize: metadata.fileSize,
+      fileType: metadata.fileType,
+      lastModified: metadata.lastModified instanceof Date ? metadata.lastModified.toISOString() : metadata.lastModified,
+      exifData: metadata.exifData ? {
+        make: metadata.exifData.make,
+        model: metadata.exifData.model,
+        software: metadata.exifData.software,
+        dateTime: metadata.exifData.dateTime,
+        dateTimeOriginal: metadata.exifData.dateTimeOriginal,
+        dateTimeDigitized: metadata.exifData.dateTimeDigitized,
+        gps: metadata.exifData.gps,
+        camera: metadata.exifData.camera,
+        image: metadata.exifData.image,
+        isRecent: metadata.exifData.isRecent,
+        isFromCamera: metadata.exifData.isFromCamera,
+        validationScore: metadata.exifData.validationScore,
+      } : null
+    } : null;
     
     const { data, errors } = await client.queries.analyzeImage({
       imageUrl,
