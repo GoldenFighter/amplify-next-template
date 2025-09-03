@@ -8,8 +8,8 @@ const bedrockClient = new BedrockRuntimeClient({
 });
 const s3Client = new S3Client({ region: process.env.BEDROCK_REGION || 'eu-west-1' });
 
-// Claude 3 Sonnet model ID (from AWS documentation)
-const MODEL_ID = 'anthropic.claude-3-sonnet-20240229-v1:0';
+// Claude 3.5 Sonnet inference profile for cross-region access
+const MODEL_ID = 'us.anthropic.claude-3-5-sonnet-20241022-v2:0';
 
 export const handler: Schema["analyzeImage"]["functionHandler"] = async (event) => {
   const startTime = Date.now();
