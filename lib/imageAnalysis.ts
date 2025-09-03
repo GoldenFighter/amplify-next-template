@@ -82,13 +82,17 @@ export async function analyzeImage(
 
     // Use the client-side Data client (Amplify Gen 2 best practice)
     const client = generateClient<Schema>();
+    
+    // Ensure metadata is properly serialized for GraphQL
+    const serializedMetadata = metadata ? JSON.parse(JSON.stringify(metadata)) : null;
+    
     const { data, errors } = await client.queries.analyzeImage({
       imageUrl,
       analysisType,
       documentType,
       expectedFields,
       specificQuestions,
-      metadata,
+      metadata: serializedMetadata,
     });
 
     if (errors?.length) {
