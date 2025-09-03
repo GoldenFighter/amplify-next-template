@@ -92,7 +92,10 @@ export async function analyzeImage(
     });
 
     if (errors?.length) {
-      throw new Error(`Analysis failed: ${errors.join(', ')}`);
+      const errorMessages = errors.map(error => 
+        typeof error === 'string' ? error : JSON.stringify(error)
+      );
+      throw new Error(`Analysis failed: ${errorMessages.join(', ')}`);
     }
 
     if (!data) {
