@@ -21,7 +21,7 @@ backend.imageAnalysis.resources.lambda.addToRolePolicy(
       'bedrock:InvokeModelWithResponseStream',
     ],
     resources: [
-      'arn:aws:bedrock:eu-west-1::inference-profile/us.anthropic.claude-3-5-sonnet-20241022-v2:0',
+      'arn:aws:bedrock:eu-west-1::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0',
     ],
   })
 );
