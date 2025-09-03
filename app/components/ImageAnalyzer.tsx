@@ -184,22 +184,22 @@ export default function ImageAnalyzer({
       return (
         <div className="space-y-4">
           <div>
-            <h3 className="font-semibold">Document Type:</h3>
-            <p>{data.documentType}</p>
+            <h3 className="font-semibold">Document Analysis:</h3>
+            <p>This is a document analysis result.</p>
           </div>
           <div>
-            <h3 className="font-semibold">Confidence:</h3>
-            <p>{(data.confidence * 100).toFixed(1)}%</p>
-          </div>
-          <div>
-            <h3 className="font-semibold">Extracted Data:</h3>
-            <pre className="bg-gray-100 p-2 rounded text-sm overflow-auto">
-              {JSON.stringify(data.extractedData, null, 2)}
-            </pre>
+            <h3 className="font-semibold">Summary:</h3>
+            <p>{data.summary}</p>
           </div>
           <div>
             <h3 className="font-semibold">Text Content:</h3>
-            <p className="whitespace-pre-wrap">{data.textContent}</p>
+            <p className="whitespace-pre-wrap">{data.text?.content || 'No text detected'}</p>
+          </div>
+          <div>
+            <h3 className="font-semibold">Full Analysis:</h3>
+            <pre className="bg-gray-100 p-2 rounded text-sm overflow-auto">
+              {JSON.stringify(data, null, 2)}
+            </pre>
           </div>
         </div>
       );
