@@ -4,15 +4,49 @@ import React, { useState } from 'react';
 import { Button } from '@aws-amplify/ui-react';
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { uploadData, getUrl } from 'aws-amplify/storage';
-import { analyzeImage as analyzeImageFunction } from '@/lib/imageAnalysis';
+import { analyzeImage as analyzeImageFunction, type ImageAnalysisResult } from '@/lib/imageAnalysis';
 
-interface ImageAnalysisResult {
-  success: boolean;
-  data?: any;
-  error?: string;
-  analysisType?: string;
-  timestamp?: string;
+// Type for the Claude analysis result (matching the Lambda response)
+interface ClaudeAnalysisResult {
+  objects?: Array<{
+    name: string;
+    confidence: number;
+    description: string;
+  }>;
+  scene?: {
+    description: string;
+    setting: string;
+    mood: string;
+  };
+  text?: {
+    detected: boolean;
+    content: string;
+    language: string;
+  };
+  colors?: {
+    dominant: string[];
+    palette: string[];
+  };
+  composition?: {
+    ruleOfThirds: boolean;
+    symmetry: boolean;
+    leadingLines: boolean;
+  };
+  technical?: {
+    quality: string;
+    lighting: string;
+    focus: string;
+  };
+  summary: string;
+  tags: string[];
+  metadata?: {
+    estimatedDate: string;
+    location: string;
+    camera: string;
+  };
 }
+
+// Using imported ImageAnalysisResult type from lib/imageAnalysis
 
 interface ImageAnalyzerProps {
   onAnalysisComplete?: (result: ImageAnalysisResult) => void;
@@ -145,7 +179,7 @@ export default function ImageAnalyzer({
     }
   };
 
-  const formatAnalysisResult = (data: any) => {
+  const formatAnalysisResult = (data: ClaudeAnalysisResult) => {
     if (analysisType === 'document' || documentType) {
       return (
         <div className="space-y-4">
@@ -180,7 +214,7 @@ export default function ImageAnalyzer({
         <div>
           <h3 className="font-semibold">Objects Detected:</h3>
           <ul className="list-disc list-inside">
-            {data.objects?.map((obj: any, index: number) => (
+            {data.objects?.map((obj, index: number) => (
               <li key={index}>
                 {obj.name} ({(obj.confidence * 100).toFixed(1)}% confidence)
               </li>

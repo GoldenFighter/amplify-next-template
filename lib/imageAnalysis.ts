@@ -1,6 +1,56 @@
 import { generateClient } from 'aws-amplify/data';
 import { type Schema } from '@/amplify/data/resource';
 
+// Type for the Claude analysis result
+interface ClaudeAnalysisResult {
+  objects?: Array<{
+    name: string;
+    confidence: number;
+    description: string;
+  }>;
+  scene?: {
+    description: string;
+    setting: string;
+    mood: string;
+  };
+  text?: {
+    detected: boolean;
+    content: string;
+    language: string;
+  };
+  colors?: {
+    dominant: string[];
+    palette: string[];
+  };
+  composition?: {
+    ruleOfThirds: boolean;
+    symmetry: boolean;
+    leadingLines: boolean;
+  };
+  technical?: {
+    quality: string;
+    lighting: string;
+    focus: string;
+  };
+  summary: string;
+  tags: string[];
+  metadata?: {
+    estimatedDate: string;
+    location: string;
+    camera: string;
+  };
+}
+
+// Type for the Lambda function response
+interface LambdaResponse {
+  success: boolean;
+  data: ClaudeAnalysisResult;
+  processingTime: number;
+}
+
+// Type for the GraphQL response
+type AnalyzeImageResponse = Schema['analyzeImage']['returnType'];
+
 export interface ImageAnalysisOptions {
   analysisType?: 'general' | 'document' | 'art' | 'product' | 'medical';
   documentType?: string;
@@ -10,7 +60,7 @@ export interface ImageAnalysisOptions {
 
 export interface ImageAnalysisResult {
   success: boolean;
-  data?: any;
+  data?: ClaudeAnalysisResult;
   error?: string;
   analysisType?: string;
   timestamp?: string;
@@ -49,8 +99,9 @@ export async function analyzeImage(
 
     console.log('Raw Lambda response:', JSON.stringify(data, null, 2));
     
-    // Extract the actual data from the Lambda response
-    const resultData = data?.data || data;
+    // Type-safe extraction of the Lambda response
+    const lambdaResponse = data as LambdaResponse;
+    const resultData = lambdaResponse.data;
     console.log('Extracted result data:', JSON.stringify(resultData, null, 2));
     
     return {
