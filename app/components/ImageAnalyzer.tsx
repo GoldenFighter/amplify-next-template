@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Button } from '@aws-amplify/ui-react';
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { uploadData, getUrl } from 'aws-amplify/storage';
+import { analyzeImage as analyzeImageFunction } from '@/lib/imageAnalysis';
 
 interface ImageAnalysisResult {
   success: boolean;
@@ -99,26 +100,13 @@ export default function ImageAnalyzer({
 
   const analyzeImage = async (imageUrl: string) => {
     try {
-      const response = await fetch('/api/analyze-image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          imageUrl,
-          analysisType,
-          documentType,
-          expectedFields,
-          specificQuestions,
-        }),
+      // Use the direct Data client (Amplify Gen 2 best practice)
+      const result = await analyzeImageFunction(imageUrl, {
+        analysisType,
+        documentType,
+        expectedFields,
+        specificQuestions,
       });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Analysis failed');
-      }
-
       return result;
     } catch (error) {
       console.error('Error analyzing image:', error);

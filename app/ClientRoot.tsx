@@ -1,18 +1,14 @@
-"use client"
+'use client';
 
-import { Authenticator } from "@aws-amplify/ui-react";
-import { Amplify } from "aws-amplify";
-import outputs from "../amplify_outputs.json";
-import { PicFightThemeProvider } from "../lib/ThemeContext";
+import { Authenticator } from '@aws-amplify/ui-react';
+import { Amplify } from 'aws-amplify';
+import outputs from '../amplify_outputs.json';
+import { PicFightThemeProvider } from '../lib/ThemeContext';
 
-// Configure Amplify on the client side
-if (!Amplify.getConfig().Auth) {
-  console.log("Configuring Amplify in AuthenticatorWrapper...");
-  Amplify.configure(outputs);
-  console.log("Amplify configured successfully in AuthenticatorWrapper");
-}
+// Configure Amplify on the client side (following Amplify quickstart pattern)
+Amplify.configure(outputs);
 
-export default function AuthenticatorWrapper({
+export default function ClientRoot({
   children,
 }: {
   children: React.ReactNode;
@@ -31,8 +27,8 @@ export default function AuthenticatorWrapper({
                      '';
         }
         
-        console.log('AuthenticatorWrapper - User:', user);
-        console.log('AuthenticatorWrapper - Extracted email:', userEmail);
+        console.log('ClientRoot - User:', user);
+        console.log('ClientRoot - Extracted email:', userEmail);
         
         return (
           <PicFightThemeProvider userEmail={userEmail}>

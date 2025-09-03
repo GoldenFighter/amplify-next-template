@@ -7,6 +7,6 @@ export const imageAnalysis = defineFunction({
   timeoutSeconds: 300, // 5 minutes for image processing
   memoryMB: 1024, // 1GB memory for image processing
   environment: {
-    BEDROCK_REGION: 'us-east-1',
+    BEDROCK_REGION: 'eu-west-1',
   },
 });
