@@ -1,17 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useAuthenticator, Authenticator } from '@aws-amplify/ui-react';
+import { useAuthenticator } from '@aws-amplify/ui-react';
 import { analyzeImage, analyzeDocument } from '@/lib/imageAnalysis';
-import { Amplify } from 'aws-amplify';
-import outputs from '../../amplify_outputs.json';
-
-// Configure Amplify at the page level
-if (!Amplify.getConfig().Auth) {
-  console.log("Configuring Amplify in test-image-analysis page...");
-  Amplify.configure(outputs);
-  console.log("Amplify configured successfully in test-image-analysis page");
-}
 
 function TestImageAnalysisContent() {
   // Get authentication state
@@ -108,9 +99,5 @@ function TestImageAnalysisContent() {
 }
 
 export default function TestImageAnalysisPage() {
-  return (
-    <Authenticator>
-      <TestImageAnalysisContent />
-    </Authenticator>
-  );
+  return <TestImageAnalysisContent />;
 }

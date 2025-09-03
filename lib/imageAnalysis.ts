@@ -1,4 +1,5 @@
-import { serverClient } from './amplifyServerClient';
+import { generateClient } from 'aws-amplify/data';
+import { type Schema } from '@/amplify/data/resource';
 
 export interface ImageAnalysisOptions {
   analysisType?: 'general' | 'document' | 'art' | 'product' | 'medical';
@@ -28,8 +29,9 @@ export async function analyzeImage(
   try {
     const { analysisType, documentType, expectedFields, specificQuestions } = options;
 
-    // Use the Data client directly (Amplify Gen 2 best practice)
-    const { data, errors } = await serverClient.queries.analyzeImage({
+    // Use the client-side Data client (Amplify Gen 2 best practice)
+    const client = generateClient<Schema>();
+    const { data, errors } = await client.queries.analyzeImage({
       imageUrl,
       analysisType,
       documentType,
