@@ -101,8 +101,14 @@ export async function analyzeImage(
 
     console.log('Raw Lambda response:', JSON.stringify(data, null, 2));
     
-    // Type-safe extraction of the Lambda response
-    const lambdaResponse = data as LambdaResponse;
+    // The GraphQL response returns the Lambda response as a JSON string
+    let lambdaResponse: LambdaResponse;
+    if (typeof data === 'string') {
+      lambdaResponse = JSON.parse(data);
+    } else {
+      lambdaResponse = data as LambdaResponse;
+    }
+    
     const resultData = lambdaResponse.data;
     console.log('Extracted result data:', JSON.stringify(resultData, null, 2));
     

@@ -370,10 +370,7 @@ export default function ImageAnalyzer({
             Timestamp: {new Date(analysisResult.timestamp || '').toLocaleString()} |
             Success: {analysisResult.success ? 'Yes' : 'No'}
           </div>
-          <div className="mb-4 p-2 bg-gray-100 rounded text-xs">
-            <strong>Debug - analysisResult:</strong>
-            <pre>{JSON.stringify(analysisResult, null, 2)}</pre>
-          </div>
+
           {analysisResult.success && analysisResult.data && formatAnalysisResult(analysisResult.data)}
           {!analysisResult.success && analysisResult.error && (
             <div className="text-red-600">
