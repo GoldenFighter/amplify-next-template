@@ -44,7 +44,8 @@ interface ClaudeAnalysisResult {
 // Type for the Lambda function response
 interface LambdaResponse {
   success: boolean;
-  data: ClaudeAnalysisResult;
+  data?: ClaudeAnalysisResult;
+  error?: string;
   processingTime: number;
 }
 
@@ -126,14 +127,21 @@ export async function analyzeImage(
       throw new Error('No analysis result received');
     }
 
-    console.log('Raw Lambda response:', JSON.stringify(data, null, 2));
+    console.log('Raw GraphQL response:', JSON.stringify(data, null, 2));
     
-    // The GraphQL response returns the Lambda response as a JSON string
+    // The GraphQL response contains the Lambda response directly
+    // The Lambda returns: { success: true, data: parsedResult, processingTime }
     let lambdaResponse: LambdaResponse;
     if (typeof data === 'string') {
       lambdaResponse = JSON.parse(data);
     } else {
       lambdaResponse = data as LambdaResponse;
+    }
+    
+    console.log('Parsed Lambda response:', JSON.stringify(lambdaResponse, null, 2));
+    
+    if (!lambdaResponse.success) {
+      throw new Error(lambdaResponse.error || 'Analysis failed');
     }
     
     const resultData = lambdaResponse.data;
