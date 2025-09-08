@@ -45,6 +45,17 @@ export const PicFightThemeProvider: React.FC<ThemeProviderProps> = ({ children, 
   // Available themes for the owner to choose from
   const availableThemes: ThemePresetKey[] = ['default', 'ocean', 'sunset', 'forest', 'midnight'];
 
+  // Apply color mode to HTML element for Amplify UI dark mode
+  useEffect(() => {
+    const htmlElement = document.documentElement;
+    htmlElement.setAttribute('data-amplify-color-mode', colorMode);
+    
+    // Also add theme name for CSS variable targeting
+    htmlElement.setAttribute('data-amplify-theme', currentTheme.name);
+    
+    console.log('Applied color mode:', colorMode, 'and theme:', currentTheme.name);
+  }, [colorMode, currentTheme.name]);
+
   // Load saved theme and color mode from localStorage
   useEffect(() => {
     if (isOwner) {
@@ -68,6 +79,9 @@ export const PicFightThemeProvider: React.FC<ThemeProviderProps> = ({ children, 
       setCurrentTheme(newTheme);
       setCurrentThemeName(themeName);
       localStorage.setItem('picfight-theme', themeName);
+      
+      // Apply theme immediately to HTML
+      document.documentElement.setAttribute('data-amplify-theme', newTheme.name);
     }
   };
 
@@ -76,6 +90,9 @@ export const PicFightThemeProvider: React.FC<ThemeProviderProps> = ({ children, 
       const newMode = colorMode === 'light' ? 'dark' : 'light';
       setColorMode(newMode);
       localStorage.setItem('picfight-color-mode', newMode);
+      
+      // Apply color mode immediately to HTML
+      document.documentElement.setAttribute('data-amplify-color-mode', newMode);
     }
   };
 

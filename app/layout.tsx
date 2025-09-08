@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./app.css";
+import "./theme-globals.css";
 import ClientRoot from "./ClientRoot";
 import "@aws-amplify/ui-react/styles.css";
 
