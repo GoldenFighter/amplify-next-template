@@ -86,11 +86,11 @@ export const useThemeTokens = () => {
       large: tokens.radii?.large?.value || '0.75rem',
       xl: tokens.radii?.xl?.value || '1rem',
     },
-    // Shadow tokens
+    // Shadow tokens (converted to CSS strings)
     shadows: {
-      small: tokens.shadows?.small?.value || '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-      medium: tokens.shadows?.medium?.value || '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-      large: tokens.shadows?.large?.value || '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+      small: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+      medium: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+      large: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
     },
     // Font tokens
     fonts: {

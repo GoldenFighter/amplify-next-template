@@ -25,7 +25,7 @@ export default function ThemeExample() {
       style={{
         padding: tokens.space.large,
         borderRadius: tokens.radii.medium,
-        boxShadow: tokens.shadows.medium,
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
         backgroundColor: tokens.colors.background.primary,
         borderColor: tokens.colors.border.primary,
       }}
