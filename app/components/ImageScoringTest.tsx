@@ -5,6 +5,8 @@ import { Button } from '@aws-amplify/ui-react';
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { uploadData, getUrl } from 'aws-amplify/storage';
 import { scoreImageSubmission, type ImageScoringResult, type ContestType, getScoreDescription, formatScores } from '@/lib/imageScoring';
+import RadarChart from './RadarChart';
+import MUIRadarChart from './MUIRadarChart';
 
 export default function ImageScoringTest() {
   const { user } = useAuthenticator();
@@ -252,6 +254,42 @@ export default function ImageScoringTest() {
           
           {scoringResult.success && scoringResult.score && (
             <div className="space-y-4">
+              {/* Radar Charts Comparison */}
+              <div className="bg-white p-4 rounded-md">
+                <h4 className="font-semibold text-gray-800 mb-4 text-center">📊 Radar Chart Comparison</h4>
+                <p className="text-sm text-gray-600 text-center mb-6">
+                  Compare our custom radar chart with the professional MUI X radar chart
+                </p>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Custom Radar Chart */}
+                  <div className="text-center">
+                    <h5 className="font-semibold text-gray-700 mb-3">Custom SVG Radar Chart</h5>
+                    <div className="flex justify-center">
+                      <RadarChart data={scoringResult.score} size={300} />
+                    </div>
+                    <div className="mt-3 text-xs text-gray-500">
+                      <p>✅ Custom built with SVG</p>
+                      <p>✅ Fighting game style</p>
+                      <p>✅ Lightweight & fast</p>
+                    </div>
+                  </div>
+
+                  {/* MUI Radar Chart */}
+                  <div className="text-center">
+                    <h5 className="font-semibold text-gray-700 mb-3">MUI X Radar Chart</h5>
+                    <div className="flex justify-center">
+                      <MUIRadarChart data={scoringResult.score} size={300} />
+                    </div>
+                    <div className="mt-3 text-xs text-gray-500">
+                      <p>✅ Professional library</p>
+                      <p>✅ Rich interactions</p>
+                      <p>✅ Built-in tooltips</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="bg-white p-4 rounded-md">
                 <h4 className="font-semibold text-gray-800 mb-3">📊 Detailed Scores</h4>
                 {formatScoreDisplay(scoringResult.score)}

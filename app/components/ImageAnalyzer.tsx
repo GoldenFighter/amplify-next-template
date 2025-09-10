@@ -5,6 +5,8 @@ import { Button } from '@aws-amplify/ui-react';
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { uploadData, getUrl } from 'aws-amplify/storage';
 import { analyzeImage as analyzeImageFunction, type ImageAnalysisResult } from '@/lib/imageAnalysis';
+import RadarChart from './RadarChart';
+import MUIRadarChart from './MUIRadarChart';
 
 // Type for the Claude analysis result (matching the Lambda response)
 interface ClaudeAnalysisResult {
@@ -80,6 +82,13 @@ export default function ImageAnalyzer({
   const [analysisResult, setAnalysisResult] = useState<ImageAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [radarScores, setRadarScores] = useState<{
+    creativity: number;
+    technical: number;
+    composition: number;
+    relevance: number;
+    originality: number;
+  } | null>(null);
   const [structuredForm, setStructuredForm] = useState<StructuredAnalysisForm>({
     analysisType: 'general',
     documentType: '',
@@ -219,6 +228,89 @@ export default function ImageAnalyzer({
     }
   };
 
+  // Extract scores from analysis result for radar chart
+  const extractScoresForRadar = (analysisData: any) => {
+    const scores = {
+      creativity: 50,
+      technical: 50,
+      composition: 50,
+      relevance: 50,
+      originality: 50,
+    };
+
+    try {
+      // Check if it's actually a cat (relevance)
+      if (analysisData.objects && Array.isArray(analysisData.objects)) {
+        const catObjects = analysisData.objects.filter((obj: any) => 
+          obj.name.toLowerCase().includes('cat') || 
+          obj.name.toLowerCase().includes('kitten') ||
+          obj.name.toLowerCase().includes('feline')
+        );
+        
+        if (catObjects.length > 0) {
+          scores.relevance = Math.min(100, 70 + (catObjects.length * 10));
+          // Use cat object confidence for technical quality
+          const avgConfidence = catObjects.reduce((sum: number, obj: any) => 
+            sum + (obj.confidence || 0), 0) / catObjects.length;
+          scores.technical = Math.round(avgConfidence * 100);
+        } else {
+          scores.relevance = 20; // Low relevance if no cat detected
+        }
+      }
+
+      // Extract from technical analysis
+      if (analysisData.technical) {
+        if (analysisData.technical.quality === 'high') scores.technical = Math.max(scores.technical, 80);
+        if (analysisData.technical.quality === 'medium') scores.technical = Math.max(scores.technical, 60);
+        if (analysisData.technical.quality === 'low') scores.technical = Math.min(scores.technical, 40);
+      }
+
+      // Extract from composition analysis
+      if (analysisData.composition) {
+        let compositionScore = 50;
+        if (analysisData.composition.ruleOfThirds) compositionScore += 20;
+        if (analysisData.composition.symmetry) compositionScore += 15;
+        if (analysisData.composition.leadingLines) compositionScore += 15;
+        scores.composition = Math.min(100, compositionScore);
+      }
+
+      // Extract from scene analysis for creativity and cuteness
+      if (analysisData.scene) {
+        if (analysisData.scene.mood) {
+          const moodWords = analysisData.scene.mood.toLowerCase();
+          if (moodWords.includes('cute') || moodWords.includes('adorable') || moodWords.includes('sweet')) {
+            scores.creativity = Math.max(scores.creativity, 80);
+            scores.originality = Math.max(scores.originality, 70);
+          }
+          if (moodWords.includes('playful') || moodWords.includes('fun')) {
+            scores.creativity = Math.max(scores.creativity, 75);
+          }
+        }
+      }
+
+      // Use tags to determine creativity and originality
+      if (analysisData.tags && Array.isArray(analysisData.tags)) {
+        const creativeTags = ['cute', 'adorable', 'playful', 'fun', 'sweet', 'lovely'];
+        const creativeTagCount = analysisData.tags.filter((tag: string) => 
+          creativeTags.some(creativeTag => tag.toLowerCase().includes(creativeTag))
+        ).length;
+        scores.creativity = Math.min(100, 50 + (creativeTagCount * 15));
+        scores.originality = Math.min(100, 50 + (creativeTagCount * 12));
+      }
+
+      // Ensure all scores are within 0-100 range
+      Object.keys(scores).forEach(key => {
+        const scoreKey = key as keyof typeof scores;
+        scores[scoreKey] = Math.max(0, Math.min(100, scores[scoreKey]));
+      });
+
+    } catch (error) {
+      console.error('Error extracting scores from analysis:', error);
+    }
+
+    return scores;
+  };
+
   const handleAnalyze = async () => {
     if (!selectedFile) {
       setError('Please select an image file first');
@@ -236,6 +328,13 @@ export default function ImageAnalyzer({
       // Analyze the image with metadata
       const result = await performImageAnalysis(imageUrl);
       console.log('Analysis result received:', JSON.stringify(result, null, 2));
+      
+      // Extract scores for radar chart
+      if (result.success && result.data) {
+        const scores = extractScoresForRadar(result.data);
+        setRadarScores(scores);
+        console.log('Radar scores extracted:', scores);
+      }
       
       setAnalysisResult(result);
       onAnalysisComplete?.(result);
@@ -428,9 +527,9 @@ export default function ImageAnalyzer({
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">Image Analysis with Claude 3.5 Sonnet</h2>
+        <h2 className="text-2xl font-bold mb-2">🐱 Cat Photo Analysis & Scoring</h2>
         <p className="text-gray-600">
-          Upload an image to get detailed analysis including object detection, scene understanding, and more.
+          Upload a cat photo to get detailed AI analysis and see your cat's score on a 5-axis radar chart!
         </p>
         <div className="mt-2 text-sm text-gray-500">
           Logged in as: {user.signInDetails?.loginId || user.username}
@@ -639,6 +738,53 @@ export default function ImageAnalyzer({
               <strong>Error:</strong> {analysisResult.error}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Radar Charts for Cat Evaluation */}
+      {radarScores && (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-6">
+          <h3 className="font-semibold text-blue-800 mb-4 text-lg text-center">
+            🐱 Cat Photo Evaluation Radar Charts
+          </h3>
+          <p className="text-sm text-blue-700 text-center mb-6">
+            Compare our custom radar chart (left) with the professional MUI X radar chart (right)
+          </p>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Custom Radar Chart */}
+            <div className="text-center">
+              <h4 className="font-semibold text-gray-800 mb-4">Custom SVG Radar Chart</h4>
+              <div className="flex justify-center">
+                <RadarChart data={radarScores} size={350} />
+              </div>
+              <div className="mt-4 text-xs text-gray-600">
+                <p>✅ Custom built with SVG</p>
+                <p>✅ Fighting game style</p>
+                <p>✅ Lightweight & fast</p>
+              </div>
+            </div>
+
+            {/* MUI Radar Chart */}
+            <div className="text-center">
+              <h4 className="font-semibold text-gray-800 mb-4">MUI X Radar Chart</h4>
+              <div className="flex justify-center">
+                <MUIRadarChart data={radarScores} size={350} />
+              </div>
+              <div className="mt-4 text-xs text-gray-600">
+                <p>✅ Professional library</p>
+                <p>✅ Rich interactions</p>
+                <p>✅ Built-in tooltips</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-6 text-center">
+            <p className="text-sm text-blue-700">
+              Both charts show how your cat photo scores across 5 key evaluation criteria.
+              The larger the area, the better the overall cat photo quality!
+            </p>
+          </div>
         </div>
       )}
     </div>
