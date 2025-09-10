@@ -89,6 +89,8 @@ export default function ImageAnalyzer({
     relevance: number;
     originality: number;
   } | null>(null);
+  const [lastAnalysisTime, setLastAnalysisTime] = useState<number>(0);
+  const [catJudgeMode, setCatJudgeMode] = useState<boolean>(false);
   const [structuredForm, setStructuredForm] = useState<StructuredAnalysisForm>({
     analysisType: 'general',
     documentType: '',
@@ -207,18 +209,45 @@ export default function ImageAnalyzer({
 
   const performImageAnalysis = async (imageUrl: string) => {
     try {
-      // Use the structured form data if enabled, otherwise use props
-      const analysisOptions = structuredForm.useStructuredResponse ? {
-        analysisType: structuredForm.analysisType,
-        documentType: structuredForm.documentType || undefined,
-        expectedFields: structuredForm.expectedFields.filter(field => field.trim() !== ''),
-        specificQuestions: structuredForm.specificQuestions.filter(question => question.trim() !== ''),
-      } : {
-        analysisType,
-        documentType,
-        expectedFields,
-        specificQuestions,
-      };
+      let analysisOptions;
+      
+      if (catJudgeMode) {
+        // Cat Judge Mode - hardcoded for cat photo judging
+        analysisOptions = {
+          analysisType: 'general' as const,
+          documentType: undefined,
+          expectedFields: [
+            'cuteness_factor',
+            'expression_quality', 
+            'photo_technical_quality',
+            'composition_appeal',
+            'overall_charm'
+          ],
+          specificQuestions: [
+            'How cute is this cat? Rate 1-10',
+            'How expressive is the cat\'s face? Rate 1-10', 
+            'How good is the photo quality? Rate 1-10',
+            'How appealing is the composition? Rate 1-10',
+            'How charming is this cat overall? Rate 1-10'
+          ],
+        };
+      } else if (structuredForm.useStructuredResponse) {
+        // Structured form mode
+        analysisOptions = {
+          analysisType: structuredForm.analysisType,
+          documentType: structuredForm.documentType || undefined,
+          expectedFields: structuredForm.expectedFields.filter(field => field.trim() !== ''),
+          specificQuestions: structuredForm.specificQuestions.filter(question => question.trim() !== ''),
+        };
+      } else {
+        // Default mode
+        analysisOptions = {
+          analysisType,
+          documentType,
+          expectedFields,
+          specificQuestions,
+        };
+      }
 
       const result = await analyzeImageFunction(imageUrl, analysisOptions);
       return result;
@@ -230,31 +259,80 @@ export default function ImageAnalyzer({
 
   // Extract scores from analysis result for radar chart
   const extractScoresForRadar = (analysisData: any) => {
-    const scores = {
-      creativity: 50,
-      technical: 50,
-      composition: 50,
-      relevance: 50,
-      originality: 50,
-    };
+    let scores;
+    
+    if (catJudgeMode) {
+      // Cat Judge Mode - 5 cute cat characteristics
+      scores = {
+        creativity: 50, // Cuteness Factor
+        technical: 50,  // Expression Quality  
+        composition: 50, // Photo Technical Quality
+        relevance: 50,  // Composition Appeal
+        originality: 50, // Overall Charm
+      };
+    } else {
+      // Default mode
+      scores = {
+        creativity: 50,
+        technical: 50,
+        composition: 50,
+        relevance: 50,
+        originality: 50,
+      };
+    }
 
     try {
-      // Check if it's actually a cat (relevance)
-      if (analysisData.objects && Array.isArray(analysisData.objects)) {
-        const catObjects = analysisData.objects.filter((obj: any) => 
-          obj.name.toLowerCase().includes('cat') || 
-          obj.name.toLowerCase().includes('kitten') ||
-          obj.name.toLowerCase().includes('feline')
-        );
-        
-        if (catObjects.length > 0) {
-          scores.relevance = Math.min(100, 70 + (catObjects.length * 10));
-          // Use cat object confidence for technical quality
-          const avgConfidence = catObjects.reduce((sum: number, obj: any) => 
-            sum + (obj.confidence || 0), 0) / catObjects.length;
-          scores.technical = Math.round(avgConfidence * 100);
-        } else {
-          scores.relevance = 20; // Low relevance if no cat detected
+      if (catJudgeMode) {
+        // Cat Judge Mode - focus on cute cat characteristics
+        if (analysisData.objects && Array.isArray(analysisData.objects)) {
+          const catObjects = analysisData.objects.filter((obj: any) => 
+            obj.name.toLowerCase().includes('cat') || 
+            obj.name.toLowerCase().includes('kitten') ||
+            obj.name.toLowerCase().includes('feline')
+          );
+          
+          if (catObjects.length > 0) {
+            // Cuteness Factor (creativity)
+            const avgConfidence = catObjects.reduce((sum: number, obj: any) => 
+              sum + (obj.confidence || 0), 0) / catObjects.length;
+            scores.creativity = Math.round(avgConfidence * 100);
+            
+            // Expression Quality (technical) - based on object descriptions
+            const hasCuteWords = catObjects.some((obj: any) => 
+              obj.description && (
+                obj.description.toLowerCase().includes('cute') ||
+                obj.description.toLowerCase().includes('adorable') ||
+                obj.description.toLowerCase().includes('sweet')
+              )
+            );
+            scores.technical = hasCuteWords ? Math.min(100, scores.technical + 30) : scores.technical;
+          } else {
+            // Not a cat - low scores
+            scores.creativity = 20;
+            scores.technical = 20;
+            scores.composition = 20;
+            scores.relevance = 20;
+            scores.originality = 20;
+          }
+        }
+      } else {
+        // Default mode - original logic
+        if (analysisData.objects && Array.isArray(analysisData.objects)) {
+          const catObjects = analysisData.objects.filter((obj: any) => 
+            obj.name.toLowerCase().includes('cat') || 
+            obj.name.toLowerCase().includes('kitten') ||
+            obj.name.toLowerCase().includes('feline')
+          );
+          
+          if (catObjects.length > 0) {
+            scores.relevance = Math.min(100, 70 + (catObjects.length * 10));
+            // Use cat object confidence for technical quality
+            const avgConfidence = catObjects.reduce((sum: number, obj: any) => 
+              sum + (obj.confidence || 0), 0) / catObjects.length;
+            scores.technical = Math.round(avgConfidence * 100);
+          } else {
+            scores.relevance = 20; // Low relevance if no cat detected
+          }
         }
       }
 
@@ -317,9 +395,19 @@ export default function ImageAnalyzer({
       return;
     }
 
+    // Rate limiting: prevent analysis within 10 seconds of each other
+    const now = Date.now();
+    const timeSinceLastAnalysis = now - lastAnalysisTime;
+    if (timeSinceLastAnalysis < 10000) { // 10 seconds
+      const remainingTime = Math.ceil((10000 - timeSinceLastAnalysis) / 1000);
+      setError(`Please wait ${remainingTime} more seconds before analyzing another image. This prevents overwhelming the AI service.`);
+      return;
+    }
+
     setIsUploading(true);
     setIsAnalyzing(true);
     setError(null);
+    setLastAnalysisTime(now);
 
     try {
       // Upload image to S3
@@ -340,7 +428,13 @@ export default function ImageAnalyzer({
       onAnalysisComplete?.(result);
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      let errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      // Handle specific Bedrock rate limiting errors
+      if (errorMessage.includes('Too many requests')) {
+        errorMessage = 'AI service is temporarily busy. Please wait 30 seconds and try again. This prevents overwhelming the AI service.';
+      }
+      
       setError(errorMessage);
       console.error('Analysis error:', error);
     } finally {
@@ -534,6 +628,37 @@ export default function ImageAnalyzer({
         <div className="mt-2 text-sm text-gray-500">
           Logged in as: {user.signInDetails?.loginId || user.username}
         </div>
+        
+        {/* Cat Judge Mode Toggle */}
+        <div className="mt-4 flex justify-center">
+          <label className="flex items-center space-x-3 bg-white border border-gray-300 rounded-lg px-4 py-2 shadow-sm">
+            <input
+              type="checkbox"
+              checked={catJudgeMode}
+              onChange={(e) => setCatJudgeMode(e.target.checked)}
+              className="rounded text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              🏆 Cat Judge Mode - 5 Cute Cat Characteristics
+            </span>
+          </label>
+        </div>
+        
+        {catJudgeMode && (
+          <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3 max-w-2xl mx-auto">
+            <h3 className="font-semibold text-blue-800 mb-2">Cat Judge Mode Active</h3>
+            <p className="text-sm text-blue-700 mb-2">
+              This mode judges your cat photo on 5 specific characteristics:
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-blue-600">
+              <div>• <strong>Cuteness Factor</strong> - How adorable is this cat?</div>
+              <div>• <strong>Expression Quality</strong> - How expressive is the cat's face?</div>
+              <div>• <strong>Photo Technical Quality</strong> - How well is the photo taken?</div>
+              <div>• <strong>Composition Appeal</strong> - How appealing is the framing?</div>
+              <div>• <strong>Overall Charm</strong> - How charming is this cat overall?</div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
@@ -745,39 +870,58 @@ export default function ImageAnalyzer({
       {radarScores && (
         <div className="bg-blue-50 border border-blue-200 rounded-md p-6">
           <h3 className="font-semibold text-blue-800 mb-4 text-lg text-center">
-            🐱 Cat Photo Evaluation Radar Charts
+            {catJudgeMode ? '🏆 Cat Judge Mode - 5 Cute Cat Characteristics' : '🐱 Cat Photo Evaluation Radar Charts'}
           </h3>
           <p className="text-sm text-blue-700 text-center mb-6">
-            Compare our custom radar chart (left) with the professional MUI X radar chart (right)
+            {catJudgeMode 
+              ? 'Professional MUI X radar chart showing your cat\'s scores on 5 cute cat characteristics'
+              : 'Compare our custom radar chart (left) with the professional MUI X radar chart (right)'
+            }
           </p>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Custom Radar Chart */}
-            <div className="text-center">
-              <h4 className="font-semibold text-gray-800 mb-4">Custom SVG Radar Chart</h4>
-              <div className="flex justify-center">
-                <RadarChart data={radarScores} size={350} />
-              </div>
-              <div className="mt-4 text-xs text-gray-600">
-                <p>✅ Custom built with SVG</p>
-                <p>✅ Fighting game style</p>
-                <p>✅ Lightweight & fast</p>
+          {catJudgeMode ? (
+            /* Cat Judge Mode - Only MUI Chart */
+            <div className="flex justify-center">
+              <div className="text-center">
+                <h4 className="font-semibold text-gray-800 mb-4">Professional Cat Judge Radar Chart</h4>
+                <MUIRadarChart data={radarScores} size={400} catJudgeMode={catJudgeMode} />
+                <div className="mt-4 text-xs text-gray-600">
+                  <p>✅ Professional MUI X radar chart</p>
+                  <p>✅ 5 cute cat characteristics</p>
+                  <p>✅ Interactive tooltips</p>
+                </div>
               </div>
             </div>
+          ) : (
+            /* Default Mode - Both Charts */
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Custom Radar Chart */}
+              <div className="text-center">
+                <h4 className="font-semibold text-gray-800 mb-4">Custom SVG Radar Chart</h4>
+                <div className="flex justify-center">
+                  <RadarChart data={radarScores} size={350} />
+                </div>
+                <div className="mt-4 text-xs text-gray-600">
+                  <p>✅ Custom built with SVG</p>
+                  <p>✅ Fighting game style</p>
+                  <p>✅ Lightweight & fast</p>
+                </div>
+              </div>
 
-            {/* MUI Radar Chart */}
-            <div className="text-center">
-              <h4 className="font-semibold text-gray-800 mb-4">MUI X Radar Chart</h4>
-              <div className="flex justify-center">
-                <MUIRadarChart data={radarScores} size={350} />
-              </div>
-              <div className="mt-4 text-xs text-gray-600">
-                <p>✅ Professional library</p>
-                <p>✅ Rich interactions</p>
-                <p>✅ Built-in tooltips</p>
+              {/* MUI Radar Chart */}
+              <div className="text-center">
+                <h4 className="font-semibold text-gray-800 mb-4">MUI X Radar Chart</h4>
+                <div className="flex justify-center">
+                  <MUIRadarChart data={radarScores} size={350} catJudgeMode={catJudgeMode} />
+                </div>
+                <div className="mt-4 text-xs text-gray-600">
+                  <p>✅ Professional library</p>
+                  <p>✅ Rich interactions</p>
+                  <p>✅ Built-in tooltips</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
           
           <div className="mt-6 text-center">
             <p className="text-sm text-blue-700">

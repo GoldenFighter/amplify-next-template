@@ -13,9 +13,10 @@ interface MUIRadarChartProps {
   };
   size?: number;
   className?: string;
+  catJudgeMode?: boolean;
 }
 
-export default function MUIRadarChart({ data, size = 400, className = '' }: MUIRadarChartProps) {
+export default function MUIRadarChart({ data, size = 400, className = '', catJudgeMode = false }: MUIRadarChartProps) {
   // Convert our data format to MUI format
   const seriesData = [
     {
@@ -28,10 +29,17 @@ export default function MUIRadarChart({ data, size = 400, className = '' }: MUIR
         data.originality
       ],
       color: '#3b82f6', // Blue color to match our theme
+      fillArea: true, // Enable filled area
     }
   ];
 
-  const metrics = [
+  const metrics = catJudgeMode ? [
+    { name: 'Cuteness Factor', max: 100 },
+    { name: 'Expression Quality', max: 100 },
+    { name: 'Photo Technical Quality', max: 100 },
+    { name: 'Composition Appeal', max: 100 },
+    { name: 'Overall Charm', max: 100 },
+  ] : [
     { name: 'Creativity', max: 100 },
     { name: 'Technical', max: 100 },
     { name: 'Composition', max: 100 },
@@ -41,14 +49,29 @@ export default function MUIRadarChart({ data, size = 400, className = '' }: MUIR
 
   return (
     <div className={`flex flex-col items-center ${className}`}>
-      <div style={{ width: size, height: size }}>
+      <div 
+        style={{ 
+          width: size, 
+          height: size,
+          backgroundColor: '#f8fafc', // Light grey background
+          borderRadius: '12px',
+          padding: '20px',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          border: '1px solid #e2e8f0'
+        }}
+      >
         <MuiRadarChart
-          height={size}
-          width={size}
+          height={size - 40}
+          width={size - 40}
           series={seriesData}
           radar={{
             max: 100,
             metrics: metrics,
+          }}
+          slotProps={{
+            tooltip: {
+              trigger: 'axis',
+            },
           }}
         />
       </div>
