@@ -56,6 +56,14 @@ interface ImageAnalyzerProps {
   specificQuestions?: string[];
 }
 
+interface StructuredAnalysisForm {
+  analysisType: 'general' | 'document' | 'art' | 'product' | 'medical';
+  documentType: string;
+  expectedFields: string[];
+  specificQuestions: string[];
+  useStructuredResponse: boolean;
+}
+
 export default function ImageAnalyzer({
   onAnalysisComplete,
   analysisType = 'general',
@@ -72,6 +80,13 @@ export default function ImageAnalyzer({
   const [analysisResult, setAnalysisResult] = useState<ImageAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [structuredForm, setStructuredForm] = useState<StructuredAnalysisForm>({
+    analysisType: 'general',
+    documentType: '',
+    expectedFields: [''],
+    specificQuestions: [''],
+    useStructuredResponse: false,
+  });
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -132,16 +147,71 @@ export default function ImageAnalyzer({
     }
   };
 
+  const handleStructuredFormChange = (field: keyof StructuredAnalysisForm, value: any) => {
+    setStructuredForm(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const addExpectedField = () => {
+    setStructuredForm(prev => ({
+      ...prev,
+      expectedFields: [...prev.expectedFields, ''],
+    }));
+  };
+
+  const removeExpectedField = (index: number) => {
+    setStructuredForm(prev => ({
+      ...prev,
+      expectedFields: prev.expectedFields.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateExpectedField = (index: number, value: string) => {
+    setStructuredForm(prev => ({
+      ...prev,
+      expectedFields: prev.expectedFields.map((field, i) => i === index ? value : field),
+    }));
+  };
+
+  const addSpecificQuestion = () => {
+    setStructuredForm(prev => ({
+      ...prev,
+      specificQuestions: [...prev.specificQuestions, ''],
+    }));
+  };
+
+  const removeSpecificQuestion = (index: number) => {
+    setStructuredForm(prev => ({
+      ...prev,
+      specificQuestions: prev.specificQuestions.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateSpecificQuestion = (index: number, value: string) => {
+    setStructuredForm(prev => ({
+      ...prev,
+      specificQuestions: prev.specificQuestions.map((question, i) => i === index ? value : question),
+    }));
+  };
+
   const performImageAnalysis = async (imageUrl: string) => {
     try {
-      // Use the direct Data client (Amplify Gen 2 best practice)
-      const result = await analyzeImageFunction(imageUrl, {
+      // Use the structured form data if enabled, otherwise use props
+      const analysisOptions = structuredForm.useStructuredResponse ? {
+        analysisType: structuredForm.analysisType,
+        documentType: structuredForm.documentType || undefined,
+        expectedFields: structuredForm.expectedFields.filter(field => field.trim() !== ''),
+        specificQuestions: structuredForm.specificQuestions.filter(question => question.trim() !== ''),
+      } : {
         analysisType,
         documentType,
         expectedFields,
         specificQuestions,
-        // Removed metadata parameter to fix GraphQL validation error
-      });
+      };
+
+      const result = await analyzeImageFunction(imageUrl, analysisOptions);
       return result;
     } catch (error) {
       console.error('Error analyzing image:', error);
@@ -181,24 +251,65 @@ export default function ImageAnalyzer({
   };
 
   const formatAnalysisResult = (data: ClaudeAnalysisResult) => {
-    if (analysisType === 'document' || documentType) {
+    const currentAnalysisType = structuredForm.useStructuredResponse ? structuredForm.analysisType : analysisType;
+    const currentDocumentType = structuredForm.useStructuredResponse ? structuredForm.documentType : documentType;
+
+    if (currentAnalysisType === 'document' || currentDocumentType) {
       return (
         <div className="space-y-4">
-          <div>
-            <h3 className="font-semibold">Document Analysis:</h3>
-            <p>This is a document analysis result.</p>
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+            <h3 className="font-semibold text-blue-800 mb-2">📄 Document Analysis Results</h3>
+            <div className="text-sm text-blue-700">
+              <div><strong>Document Type:</strong> {currentDocumentType || 'General Document'}</div>
+              <div><strong>Analysis Type:</strong> {currentAnalysisType}</div>
+            </div>
           </div>
+
           <div>
-            <h3 className="font-semibold">Summary:</h3>
-            <p>{data.summary}</p>
+            <h3 className="font-semibold text-gray-800 mb-2">📋 Summary</h3>
+            <p className="bg-gray-50 p-3 rounded-md">{data.summary}</p>
           </div>
+
+          {data.text?.detected && (
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-2">📝 Extracted Text</h3>
+              <div className="bg-gray-50 p-3 rounded-md">
+                <p className="whitespace-pre-wrap">{data.text.content}</p>
+                <p className="text-sm text-gray-600 mt-2">Language: {data.text.language}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Show structured data if available */}
+          {data.objects && data.objects.length > 0 && (
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-2">🎯 Detected Elements</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {data.objects.map((obj, index: number) => (
+                  <div key={index} className="bg-green-50 border border-green-200 rounded-md p-3">
+                    <div className="font-medium text-green-800">{obj.name}</div>
+                    <div className="text-sm text-green-600">Confidence: {(obj.confidence * 100).toFixed(1)}%</div>
+                    {obj.description && <div className="text-sm text-gray-600 mt-1">{obj.description}</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
-            <h3 className="font-semibold">Text Content:</h3>
-            <p className="whitespace-pre-wrap">{data.text?.content || 'No text detected'}</p>
+            <h3 className="font-semibold text-gray-800 mb-2">🏷️ Tags</h3>
+            <div className="flex flex-wrap gap-2">
+              {data.tags?.map((tag: string, index: number) => (
+                <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
+
           <div>
-            <h3 className="font-semibold">Full Analysis:</h3>
-            <pre className="bg-gray-100 p-2 rounded text-sm overflow-auto">
+            <h3 className="font-semibold text-gray-800 mb-2">🔍 Raw Analysis Data</h3>
+            <pre className="bg-gray-100 p-3 rounded text-xs overflow-auto max-h-64">
               {JSON.stringify(data, null, 2)}
             </pre>
           </div>
@@ -208,39 +319,106 @@ export default function ImageAnalyzer({
 
     return (
       <div className="space-y-4">
-        <div>
-          <h3 className="font-semibold">Summary:</h3>
-          <p>{data.summary}</p>
-        </div>
-        <div>
-          <h3 className="font-semibold">Objects Detected:</h3>
-          <ul className="list-disc list-inside">
-            {data.objects?.map((obj, index: number) => (
-              <li key={index}>
-                {obj.name} ({(obj.confidence * 100).toFixed(1)}% confidence)
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <h3 className="font-semibold">Scene Description:</h3>
-          <p>{data.scene?.description}</p>
-        </div>
-        <div>
-          <h3 className="font-semibold">Tags:</h3>
-          <div className="flex flex-wrap gap-2">
-            {data.tags?.map((tag: string, index: number) => (
-              <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
-                {tag}
-              </span>
-            ))}
+        <div className="bg-green-50 border border-green-200 rounded-md p-4">
+          <h3 className="font-semibold text-green-800 mb-2">🎨 General Analysis Results</h3>
+          <div className="text-sm text-green-700">
+            <div><strong>Analysis Type:</strong> {currentAnalysisType}</div>
+            {structuredForm.useStructuredResponse && (
+              <div><strong>Structured Response:</strong> Enabled</div>
+            )}
           </div>
         </div>
+
+        <div>
+          <h3 className="font-semibold text-gray-800 mb-2">📋 Summary</h3>
+          <p className="bg-gray-50 p-3 rounded-md">{data.summary}</p>
+        </div>
+
+        {data.objects && data.objects.length > 0 && (
+          <div>
+            <h3 className="font-semibold text-gray-800 mb-2">🎯 Objects Detected</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {data.objects.map((obj, index: number) => (
+                <div key={index} className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                  <div className="font-medium text-blue-800">{obj.name}</div>
+                  <div className="text-sm text-blue-600">Confidence: {(obj.confidence * 100).toFixed(1)}%</div>
+                  {obj.description && <div className="text-sm text-gray-600 mt-1">{obj.description}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {data.scene && (
+          <div>
+            <h3 className="font-semibold text-gray-800 mb-2">🌅 Scene Description</h3>
+            <div className="bg-gray-50 p-3 rounded-md">
+              <p><strong>Description:</strong> {data.scene.description}</p>
+              {data.scene.setting && <p><strong>Setting:</strong> {data.scene.setting}</p>}
+              {data.scene.mood && <p><strong>Mood:</strong> {data.scene.mood}</p>}
+            </div>
+          </div>
+        )}
+
+        {data.colors && (
+          <div>
+            <h3 className="font-semibold text-gray-800 mb-2">🎨 Colors</h3>
+            <div className="bg-gray-50 p-3 rounded-md">
+              {data.colors.dominant && data.colors.dominant.length > 0 && (
+                <div className="mb-2">
+                  <strong>Dominant Colors:</strong>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {data.colors.dominant.map((color, index) => (
+                      <span key={index} className="px-2 py-1 bg-gray-200 rounded text-sm">{color}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {data.colors.palette && data.colors.palette.length > 0 && (
+                <div>
+                  <strong>Color Palette:</strong>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {data.colors.palette.map((color, index) => (
+                      <span key={index} className="px-2 py-1 bg-gray-200 rounded text-sm">{color}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {data.tags && data.tags.length > 0 && (
+          <div>
+            <h3 className="font-semibold text-gray-800 mb-2">🏷️ Tags</h3>
+            <div className="flex flex-wrap gap-2">
+              {data.tags.map((tag: string, index: number) => (
+                <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {data.text?.detected && (
           <div>
-            <h3 className="font-semibold">Text Detected:</h3>
-            <p>{data.text.content}</p>
-            <p className="text-sm text-gray-600">Language: {data.text.language}</p>
+            <h3 className="font-semibold text-gray-800 mb-2">📝 Text Detected</h3>
+            <div className="bg-gray-50 p-3 rounded-md">
+              <p>{data.text.content}</p>
+              <p className="text-sm text-gray-600 mt-2">Language: {data.text.language}</p>
+            </div>
+          </div>
+        )}
+
+        {data.technical && (
+          <div>
+            <h3 className="font-semibold text-gray-800 mb-2">⚙️ Technical Details</h3>
+            <div className="bg-gray-50 p-3 rounded-md">
+              {data.technical.quality && <p><strong>Quality:</strong> {data.technical.quality}</p>}
+              {data.technical.lighting && <p><strong>Lighting:</strong> {data.technical.lighting}</p>}
+              {data.technical.focus && <p><strong>Focus:</strong> {data.technical.focus}</p>}
+            </div>
           </div>
         )}
       </div>
@@ -303,6 +481,139 @@ export default function ImageAnalyzer({
             >
               {isUploading ? 'Uploading...' : isAnalyzing ? 'Analyzing...' : 'Analyze Image'}
             </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Structured Analysis Options */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Structured Analysis Options</h3>
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={structuredForm.useStructuredResponse}
+              onChange={(e) => handleStructuredFormChange('useStructuredResponse', e.target.checked)}
+              className="rounded"
+            />
+            <span className="text-sm text-gray-700">Enable structured response</span>
+          </label>
+        </div>
+
+        {structuredForm.useStructuredResponse && (
+          <div className="space-y-4">
+            {/* Analysis Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Analysis Type
+              </label>
+              <select
+                value={structuredForm.analysisType}
+                onChange={(e) => handleStructuredFormChange('analysisType', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="general">General Analysis</option>
+                <option value="document">Document Analysis</option>
+                <option value="art">Art Analysis</option>
+                <option value="product">Product Analysis</option>
+                <option value="medical">Medical Analysis</option>
+              </select>
+            </div>
+
+            {/* Document Type */}
+            {structuredForm.analysisType === 'document' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Document Type
+                </label>
+                <input
+                  type="text"
+                  value={structuredForm.documentType}
+                  onChange={(e) => handleStructuredFormChange('documentType', e.target.value)}
+                  placeholder="e.g., invoice, contract, form, receipt"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            )}
+
+            {/* Expected Fields */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Expected Fields to Extract
+              </label>
+              {structuredForm.expectedFields.map((field, index) => (
+                <div key={index} className="flex space-x-2 mb-2">
+                  <input
+                    type="text"
+                    value={field}
+                    onChange={(e) => updateExpectedField(index, e.target.value)}
+                    placeholder="e.g., name, amount, date, signature"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeExpectedField(index)}
+                    className="px-3 py-2 text-red-600 hover:text-red-800"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addExpectedField}
+                className="text-blue-600 hover:text-blue-800 text-sm"
+              >
+                + Add Field
+              </button>
+            </div>
+
+            {/* Specific Questions */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Specific Questions
+              </label>
+              {structuredForm.specificQuestions.map((question, index) => (
+                <div key={index} className="flex space-x-2 mb-2">
+                  <input
+                    type="text"
+                    value={question}
+                    onChange={(e) => updateSpecificQuestion(index, e.target.value)}
+                    placeholder="e.g., What is the total amount? Who is the recipient?"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeSpecificQuestion(index)}
+                    className="px-3 py-2 text-red-600 hover:text-red-800"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addSpecificQuestion}
+                className="text-blue-600 hover:text-blue-800 text-sm"
+              >
+                + Add Question
+              </button>
+            </div>
+
+            {/* Preview of what will be sent */}
+            <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Analysis Parameters Preview:</h4>
+              <div className="text-xs text-gray-600 space-y-1">
+                <div><strong>Type:</strong> {structuredForm.analysisType}</div>
+                {structuredForm.documentType && <div><strong>Document Type:</strong> {structuredForm.documentType}</div>}
+                {structuredForm.expectedFields.filter(f => f.trim()).length > 0 && (
+                  <div><strong>Expected Fields:</strong> {structuredForm.expectedFields.filter(f => f.trim()).join(', ')}</div>
+                )}
+                {structuredForm.specificQuestions.filter(q => q.trim()).length > 0 && (
+                  <div><strong>Questions:</strong> {structuredForm.specificQuestions.filter(q => q.trim()).join(', ')}</div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
