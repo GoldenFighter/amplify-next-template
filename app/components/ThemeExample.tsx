@@ -142,8 +142,8 @@ export default function ThemeExample() {
           </Heading>
           <Flex gap={tokens.space.small} wrap="wrap">
             <Button variation="primary">Primary Button</Button>
-            <Button variation="secondary">Secondary Button</Button>
             <Button variation="link">Link Button</Button>
+            <Button size="small">Small Button</Button>
           </Flex>
         </Flex>
 

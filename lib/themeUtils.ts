@@ -12,61 +12,61 @@ export const useThemeTokens = () => {
   return {
     // Color tokens
     colors: {
-      // Brand colors
+      // Brand colors (using CSS variables from our custom theme)
       brand: {
-        primary: tokens.colors.brand?.primary?.value || '#d97706',
-        secondary: tokens.colors.brand?.secondary?.value || '#059669',
-        tertiary: tokens.colors.brand?.tertiary?.value || '#dc2626',
+        primary: '#d97706', // Default orange
+        secondary: '#059669', // Default green
+        tertiary: '#dc2626', // Default red
       },
-      // Primary color scale
+      // Primary color scale (using CSS variables from our custom theme)
       primary: {
-        10: tokens.colors.primary?.[10]?.value || '#fef3c7',
-        20: tokens.colors.primary?.[20]?.value || '#fde68a',
-        40: tokens.colors.primary?.[40]?.value || '#f59e0b',
-        60: tokens.colors.primary?.[60]?.value || '#d97706',
-        80: tokens.colors.primary?.[80]?.value || '#b45309',
-        90: tokens.colors.primary?.[90]?.value || '#92400e',
-        100: tokens.colors.primary?.[100]?.value || '#78350f',
+        10: '#fef3c7', // Lightest orange
+        20: '#fde68a', // Light orange
+        40: '#f59e0b', // Medium light orange
+        60: '#d97706', // Main orange
+        80: '#b45309', // Dark orange
+        90: '#92400e', // Darker orange
+        100: '#78350f', // Darkest orange
       },
-      // Font colors
+      // Font colors (using CSS variables from our custom theme)
       font: {
-        primary: tokens.colors.font?.primary?.value || '#1f2937',
-        secondary: tokens.colors.font?.secondary?.value || '#6b7280',
-        tertiary: tokens.colors.font?.tertiary?.value || '#9ca3af',
-        inverse: tokens.colors.font?.inverse?.value || '#ffffff',
-        interactive: tokens.colors.font?.interactive?.value || tokens.colors.brand?.primary?.value || '#d97706',
+        primary: '#1f2937', // Dark gray for main text
+        secondary: '#6b7280', // Medium gray for secondary text
+        tertiary: '#9ca3af', // Light gray for tertiary text
+        inverse: '#ffffff', // White text for dark backgrounds
+        interactive: '#d97706', // Brand color for links
       },
-      // Background colors
+      // Background colors (using CSS variables from our custom theme)
       background: {
-        primary: tokens.colors.background?.primary?.value || '#ffffff',
-        secondary: tokens.colors.background?.secondary?.value || '#f9fafb',
-        tertiary: tokens.colors.background?.tertiary?.value || '#f3f4f6',
-        inverse: tokens.colors.background?.inverse?.value || '#111827',
+        primary: '#ffffff', // White background
+        secondary: '#f9fafb', // Light gray background
+        tertiary: '#f3f4f6', // Slightly darker gray
+        inverse: '#111827', // Dark background
       },
-      // Border colors
+      // Border colors (using CSS variables from our custom theme)
       border: {
-        primary: tokens.colors.border?.primary?.value || '#e5e7eb',
-        secondary: tokens.colors.border?.secondary?.value || '#d1d5db',
-        focus: tokens.colors.border?.focus?.value || tokens.colors.brand?.primary?.value || '#d97706',
-        error: tokens.colors.border?.error?.value || '#dc2626',
-        success: tokens.colors.border?.success?.value || '#059669',
+        primary: '#e5e7eb', // Light gray borders
+        secondary: '#d1d5db', // Medium gray borders
+        focus: '#d97706', // Brand color for focus states
+        error: '#dc2626', // Red for error states
+        success: '#059669', // Green for success states
       },
-      // Status colors
+      // Status colors (using CSS variables from our custom theme)
       success: {
-        primary: tokens.colors.success?.primary?.value || '#059669',
-        secondary: tokens.colors.success?.secondary?.value || '#d1fae5',
+        primary: '#059669',
+        secondary: '#d1fae5',
       },
       warning: {
-        primary: tokens.colors.warning?.primary?.value || '#f59e0b',
-        secondary: tokens.colors.warning?.secondary?.value || '#fef3c7',
+        primary: '#f59e0b',
+        secondary: '#fef3c7',
       },
       error: {
-        primary: tokens.colors.error?.primary?.value || '#dc2626',
-        secondary: tokens.colors.error?.secondary?.value || '#fef2f2',
+        primary: '#dc2626',
+        secondary: '#fef2f2',
       },
       info: {
-        primary: tokens.colors.info?.primary?.value || '#2563eb',
-        secondary: tokens.colors.info?.secondary?.value || '#dbeafe',
+        primary: '#2563eb',
+        secondary: '#dbeafe',
       },
     },
     // Spacing tokens

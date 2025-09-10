@@ -1,11 +1,11 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { ThemeProvider, Theme } from '@aws-amplify/ui-react';
+import { ThemeProvider } from '@aws-amplify/ui-react';
 import { defaultSiteTheme, themePresets, ThemePresetKey } from './theme';
 
 interface ThemeContextType {
-  currentTheme: Theme;
+  currentTheme: typeof defaultSiteTheme;
   currentThemeName: string;
   setTheme: (themeName: ThemePresetKey) => void;
   availableThemes: ThemePresetKey[];
@@ -30,7 +30,7 @@ interface ThemeProviderProps {
 }
 
 export const PicFightThemeProvider: React.FC<ThemeProviderProps> = ({ children, userEmail }) => {
-  const [currentTheme, setCurrentTheme] = useState<Theme>(defaultSiteTheme);
+  const [currentTheme, setCurrentTheme] = useState<typeof defaultSiteTheme>(defaultSiteTheme);
   const [currentThemeName, setCurrentThemeName] = useState<string>('default');
   const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');
   
