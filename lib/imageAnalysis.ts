@@ -57,7 +57,7 @@ export interface ImageAnalysisOptions {
   documentType?: string;
   expectedFields?: string[];
   specificQuestions?: string[];
-  metadata?: any; // Optional image metadata
+  // Removed metadata parameter to simplify and avoid GraphQL validation issues
 }
 
 export interface ImageAnalysisResult {
@@ -79,33 +79,10 @@ export async function analyzeImage(
   options: ImageAnalysisOptions = {}
 ): Promise<ImageAnalysisResult> {
   try {
-    const { analysisType, documentType, expectedFields, specificQuestions, metadata } = options;
+    const { analysisType, documentType, expectedFields, specificQuestions } = options;
 
     // Use the client-side Data client (Amplify Gen 2 best practice)
     const client = generateClient<Schema>();
-    
-    // Ensure metadata is properly serialized for GraphQL
-    // Convert Date objects to ISO strings and clean up the metadata
-    const serializedMetadata = metadata ? {
-      fileName: metadata.fileName,
-      fileSize: metadata.fileSize,
-      fileType: metadata.fileType,
-      lastModified: metadata.lastModified instanceof Date ? metadata.lastModified.toISOString() : metadata.lastModified,
-      exifData: metadata.exifData ? {
-        make: metadata.exifData.make,
-        model: metadata.exifData.model,
-        software: metadata.exifData.software,
-        dateTime: metadata.exifData.dateTime,
-        dateTimeOriginal: metadata.exifData.dateTimeOriginal,
-        dateTimeDigitized: metadata.exifData.dateTimeDigitized,
-        gps: metadata.exifData.gps,
-        camera: metadata.exifData.camera,
-        image: metadata.exifData.image,
-        isRecent: metadata.exifData.isRecent,
-        isFromCamera: metadata.exifData.isFromCamera,
-        validationScore: metadata.exifData.validationScore,
-      } : null
-    } : null;
     
     const { data, errors } = await client.queries.analyzeImage({
       imageUrl,
@@ -113,7 +90,7 @@ export async function analyzeImage(
       documentType,
       expectedFields,
       specificQuestions,
-      metadata: serializedMetadata,
+      // Removed metadata parameter to avoid GraphQL validation issues
     });
 
     if (errors?.length) {

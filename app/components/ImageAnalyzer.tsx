@@ -5,7 +5,6 @@ import { Button } from '@aws-amplify/ui-react';
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { uploadData, getUrl } from 'aws-amplify/storage';
 import { analyzeImage as analyzeImageFunction, type ImageAnalysisResult } from '@/lib/imageAnalysis';
-import { extractImageMetadata, formatImageMetadata, getValidationReport, type ImageMetadata } from '@/lib/imageMetadata';
 
 // Type for the Claude analysis result (matching the Lambda response)
 interface ClaudeAnalysisResult {
@@ -71,7 +70,6 @@ export default function ImageAnalyzer({
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<ImageAnalysisResult | null>(null);
-  const [imageMetadata, setImageMetadata] = useState<ImageMetadata | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -93,7 +91,6 @@ export default function ImageAnalyzer({
       setSelectedFile(file);
       setError(null);
       setAnalysisResult(null);
-      setImageMetadata(null);
 
       // Create preview
       const reader = new FileReader();
@@ -101,15 +98,6 @@ export default function ImageAnalyzer({
         setImagePreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
-
-      // Extract metadata
-      try {
-        const metadata = await extractImageMetadata(file);
-        setImageMetadata(metadata);
-        console.log('Extracted metadata:', metadata);
-      } catch (error) {
-        console.error('Error extracting metadata:', error);
-      }
     }
   };
 
@@ -152,7 +140,7 @@ export default function ImageAnalyzer({
         documentType,
         expectedFields,
         specificQuestions,
-        metadata: imageMetadata,
+        // Removed metadata parameter to fix GraphQL validation error
       });
       return result;
     } catch (error) {
@@ -301,43 +289,6 @@ export default function ImageAnalyzer({
           </div>
         )}
 
-        {imageMetadata && (
-          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-md p-4">
-            <h3 className="font-semibold text-blue-800 mb-2">Image Metadata</h3>
-            <div className="text-sm text-blue-700 space-y-1">
-              <div><strong>File:</strong> {imageMetadata.fileName}</div>
-              <div><strong>Size:</strong> {Math.round(imageMetadata.fileSize / 1024)}KB</div>
-              <div><strong>Type:</strong> {imageMetadata.fileType}</div>
-              <div><strong>Uploaded:</strong> {imageMetadata.lastModified.toLocaleString()}</div>
-              
-              {imageMetadata.exifData && (
-                <>
-                  {imageMetadata.exifData.make && imageMetadata.exifData.model && (
-                    <div><strong>Camera:</strong> {imageMetadata.exifData.make} {imageMetadata.exifData.model}</div>
-                  )}
-                  {imageMetadata.exifData.software && (
-                    <div><strong>Software:</strong> {imageMetadata.exifData.software}</div>
-                  )}
-                  {imageMetadata.exifData.dateTime && (
-                    <div><strong>Taken:</strong> {imageMetadata.exifData.dateTime}</div>
-                  )}
-                  {imageMetadata.exifData.image?.width && imageMetadata.exifData.image?.height && (
-                    <div><strong>Resolution:</strong> {imageMetadata.exifData.image.width}×{imageMetadata.exifData.image.height}</div>
-                  )}
-                  {imageMetadata.exifData.gps?.latitude && imageMetadata.exifData.gps?.longitude && (
-                    <div><strong>Location:</strong> {imageMetadata.exifData.gps.latitude.toFixed(6)}, {imageMetadata.exifData.gps.longitude.toFixed(6)}</div>
-                  )}
-                  
-                  <div className="mt-2 pt-2 border-t border-blue-300">
-                    <div><strong>Recent:</strong> {imageMetadata.exifData.isRecent ? '✅ Yes' : '❌ No'}</div>
-                    <div><strong>From Camera:</strong> {imageMetadata.exifData.isFromCamera ? '✅ Yes' : '❌ No'}</div>
-                    <div><strong>Validation Score:</strong> {imageMetadata.exifData.validationScore || 0}/100</div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
 
         {selectedFile && (
           <div className="mt-4 text-center">
