@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 import { client, useAIGeneration } from "../../../lib/client";
 import { getDisplayName, canSubmitToBoard, isAdmin, checkSubmissionFrequency } from "../../../lib/utils";
+import { scoreImageSubmission, type ContestType } from "../../../lib/imageScoring";
 import { Button } from "@aws-amplify/ui-react";
 
 import SubmissionsView from "../../components/SubmissionsView";
@@ -684,15 +685,45 @@ export default function BoardPage() {
             maxScore: board.maxScore
           });
 
-          // Use Amplify AI generation with image URL
-          console.log("Attempting Amplify AI generation with image URL...");
-          const result = await client.generations.scoreImageContest({
-            imageUrl: imageUrl,
-            contestType: board.contestType,
-            contestPrompt: board.contestPrompt,
-            judgingCriteria: board.judgingCriteria.filter(c => c !== null) as string[],
-            maxScore: board.maxScore,
-          });
+          // Use our comprehensive scoring system
+          console.log("Attempting comprehensive AI scoring...");
+          
+          // Map board contest type to our scoring system contest type
+          const contestTypeMapping: Record<string, ContestType> = {
+            'photography': 'photography',
+            'art': 'art',
+            'design': 'design',
+            'document': 'document',
+            'image-based': 'general',
+            'general': 'general'
+          };
+          
+          const contestType = contestTypeMapping[board.contestType.toLowerCase()] || 'general';
+          
+          const scoringResult = await scoreImageSubmission(
+            imageUrl,
+            contestType,
+            board.contestPrompt,
+            board.id,
+            `submission-${Date.now()}`,
+            loginId
+          );
+          
+          // Convert our scoring format to the expected format
+          const result = {
+            data: scoringResult.success && scoringResult.score ? {
+              rating: Math.round(scoringResult.score.overall * (board.maxScore / 100)),
+              summary: `Comprehensive AI Analysis - Overall Score: ${scoringResult.score.overall}/100`,
+              reasoning: `Creativity: ${scoringResult.score.creativity}/100, Technical: ${scoringResult.score.technical}/100, Composition: ${scoringResult.score.composition}/100, Relevance: ${scoringResult.score.relevance}/100, Originality: ${scoringResult.score.originality}/100`,
+              risks: [],
+              recommendations: [],
+              // Store the full scoring data for detailed display
+              detailedScores: scoringResult.score,
+              processingTime: scoringResult.processingTime,
+              analysisData: scoringResult.analysis
+            } : null,
+            errors: scoringResult.success ? null : [scoringResult.error]
+          };
           console.log("Amplify AI result received:", result);
 
           console.log("Final AI result:", result);
@@ -728,7 +759,7 @@ export default function BoardPage() {
             // Check if there are errors in the result
             if (result.errors && result.errors.length > 0) {
               console.error("AI generation errors:", result.errors);
-              alert(`AI analysis failed: ${result.errors[0]?.message || 'Unknown error'}`);
+              alert(`AI analysis failed: ${result.errors[0] || 'Unknown error'}`);
             } else {
               alert("Image uploaded successfully, but AI analysis returned no results. Please try again.");
             }
