@@ -50,9 +50,8 @@ export default function MUIRadarChart({ data, size = 400, className = '', catJud
   return (
     <div className={`flex flex-col items-center ${className}`}>
       <div 
+        className="w-full max-w-md mx-auto"
         style={{ 
-          width: size, 
-          height: size,
           backgroundColor: '#f8fafc', // Light grey background
           borderRadius: '12px',
           padding: '20px',
@@ -60,20 +59,22 @@ export default function MUIRadarChart({ data, size = 400, className = '', catJud
           border: '1px solid #e2e8f0'
         }}
       >
-        <MuiRadarChart
-          height={size - 40}
-          width={size - 40}
-          series={seriesData}
-          radar={{
-            max: 100,
-            metrics: metrics,
-          }}
-          slotProps={{
-            tooltip: {
-              trigger: 'axis',
-            },
-          }}
-        />
+        <div className="w-full" style={{ height: size, width: size }}>
+          <MuiRadarChart
+            height={size - 40}
+            width={size - 40}
+            series={seriesData}
+            radar={{
+              max: 100,
+              metrics: metrics,
+            }}
+            slotProps={{
+              tooltip: {
+                trigger: 'axis',
+              },
+            }}
+          />
+        </div>
       </div>
       
       {/* Custom Legend */}

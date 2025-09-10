@@ -619,94 +619,138 @@ export default function ImageAnalyzer({
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">🐱 Cat Photo Analysis & Scoring</h2>
-        <p className="text-gray-600">
-          Upload a cat photo to get detailed AI analysis and see your cat's score on a 5-axis radar chart!
-        </p>
-        <div className="mt-2 text-sm text-gray-500">
-          Logged in as: {user.signInDetails?.loginId || user.username}
-        </div>
-        
-        {/* Cat Judge Mode Toggle */}
-        <div className="mt-4 flex justify-center">
-          <label className="flex items-center space-x-3 bg-white border border-gray-300 rounded-lg px-4 py-2 shadow-sm">
-            <input
-              type="checkbox"
-              checked={catJudgeMode}
-              onChange={(e) => setCatJudgeMode(e.target.checked)}
-              className="rounded text-blue-600 focus:ring-blue-500"
-            />
-            <span className="text-sm font-medium text-gray-700">
-              🏆 Cat Judge Mode - 5 Cute Cat Characteristics
-            </span>
-          </label>
-        </div>
-        
-        {catJudgeMode && (
-          <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3 max-w-2xl mx-auto">
-            <h3 className="font-semibold text-blue-800 mb-2">Cat Judge Mode Active</h3>
-            <p className="text-sm text-blue-700 mb-2">
-              This mode judges your cat photo on 5 specific characteristics:
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-blue-600">
-              <div>• <strong>Cuteness Factor</strong> - How adorable is this cat?</div>
-              <div>• <strong>Expression Quality</strong> - How expressive is the cat's face?</div>
-              <div>• <strong>Photo Technical Quality</strong> - How well is the photo taken?</div>
-              <div>• <strong>Composition Appeal</strong> - How appealing is the framing?</div>
-              <div>• <strong>Overall Charm</strong> - How charming is this cat overall?</div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
-        <div className="text-center">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileSelect}
-            className="hidden"
-            id="image-upload"
-          />
-          <label
-            htmlFor="image-upload"
-            className="cursor-pointer inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-          >
-            Select Image
-          </label>
-          <p className="mt-2 text-sm text-gray-500">
-            Supports JPEG, PNG, GIF, WebP (max 10MB)
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+        {/* Header Section */}
+        <div className="text-center bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-3">
+            🐱 Cat Photo Analysis & Scoring
+          </h1>
+          <p className="text-gray-600 text-lg mb-4">
+            Upload a cat photo to get detailed AI analysis and see your cat's score on a 5-axis radar chart!
           </p>
+          <div className="text-sm text-gray-500 mb-4">
+            Logged in as: {user.signInDetails?.loginId || user.username}
+          </div>
+          
+          {/* Cat Judge Mode Toggle */}
+          <div className="flex justify-center">
+            <label className="flex items-center space-x-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl px-6 py-3 shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={catJudgeMode}
+                onChange={(e) => setCatJudgeMode(e.target.checked)}
+                className="rounded text-white focus:ring-2 focus:ring-white"
+              />
+              <span className="font-semibold">
+                🏆 Cat Judge Mode
+              </span>
+            </label>
+          </div>
+          
+          {catJudgeMode && (
+            <div className="mt-4 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-xl p-4 max-w-4xl mx-auto">
+              <h3 className="font-bold text-green-800 mb-3 text-lg">Cat Judge Mode Active</h3>
+              <p className="text-green-700 mb-3">
+                This mode judges your cat photo on 5 specific characteristics:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                <div className="bg-white rounded-lg p-3 shadow-sm">
+                  <strong className="text-green-800">Cuteness Factor</strong>
+                  <p className="text-gray-600 text-xs">How adorable is this cat?</p>
+                </div>
+                <div className="bg-white rounded-lg p-3 shadow-sm">
+                  <strong className="text-green-800">Expression Quality</strong>
+                  <p className="text-gray-600 text-xs">How expressive is the cat's face?</p>
+                </div>
+                <div className="bg-white rounded-lg p-3 shadow-sm">
+                  <strong className="text-green-800">Photo Technical Quality</strong>
+                  <p className="text-gray-600 text-xs">How well is the photo taken?</p>
+                </div>
+                <div className="bg-white rounded-lg p-3 shadow-sm">
+                  <strong className="text-green-800">Composition Appeal</strong>
+                  <p className="text-gray-600 text-xs">How appealing is the framing?</p>
+                </div>
+                <div className="bg-white rounded-lg p-3 shadow-sm">
+                  <strong className="text-green-800">Overall Charm</strong>
+                  <p className="text-gray-600 text-xs">How charming is this cat overall?</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        {imagePreview && (
-          <div className="mt-4">
-            <img
-              src={imagePreview}
-              alt="Preview"
-              className="max-w-full h-64 object-contain mx-auto rounded"
+        {/* Upload Section */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <div className="text-center">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+              id="image-upload"
             />
-          </div>
-        )}
-
-
-        {selectedFile && (
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-600">
-              Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-            </p>
-            <Button
-              onClick={handleAnalyze}
-              disabled={isUploading || isAnalyzing}
-              className="mt-2"
-              variation="primary"
+            <label
+              htmlFor="image-upload"
+              className="cursor-pointer inline-flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gradient-to-br from-gray-50 to-gray-100 hover:from-blue-50 hover:to-indigo-100 hover:border-blue-400 transition-all duration-200"
             >
-              {isUploading ? 'Uploading...' : isAnalyzing ? 'Analyzing...' : 'Analyze Image'}
-            </Button>
+              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                <svg
+                  className="w-12 h-12 mb-4 text-gray-500"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 20 16"
+                >
+                  <path
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                  />
+                </svg>
+                <p className="mb-2 text-lg font-semibold text-gray-700">
+                  Click to upload a cat photo
+                </p>
+                <p className="text-sm text-gray-500">PNG, JPG, GIF or WEBP (MAX. 10MB)</p>
+              </div>
+            </label>
           </div>
-        )}
+
+          {imagePreview && (
+            <div className="mt-6">
+              <div className="relative bg-gray-100 rounded-xl p-4">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="max-w-full h-64 md:h-80 object-contain mx-auto rounded-lg shadow-lg"
+                />
+              </div>
+            </div>
+          )}
+
+          {selectedFile && (
+            <div className="mt-6 text-center">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <p className="text-sm font-medium text-blue-800">
+                  Selected: {selectedFile.name}
+                </p>
+                <p className="text-xs text-blue-600">
+                  Size: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+              </div>
+              <Button
+                onClick={handleAnalyze}
+                disabled={isUploading || isAnalyzing}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                variation="primary"
+              >
+                {isUploading ? 'Uploading...' : isAnalyzing ? 'Analyzing...' : 'Analyze Image'}
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Structured Analysis Options */}
@@ -848,89 +892,151 @@ export default function ImageAnalyzer({
         </div>
       )}
 
-      {analysisResult && (
-        <div className="bg-green-50 border border-green-200 rounded-md p-4">
-          <h3 className="font-semibold text-green-800 mb-2">Analysis Results</h3>
-          <div className="text-sm text-green-700 mb-2">
-            Analysis Type: {analysisResult.analysisType} | 
-            Timestamp: {new Date(analysisResult.timestamp || '').toLocaleString()} |
-            Success: {analysisResult.success ? 'Yes' : 'No'}
+        {/* Analysis Results */}
+        {analysisResult && (
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-gray-800">Analysis Results</h3>
+              <div className="flex items-center space-x-2">
+                <div className={`w-3 h-3 rounded-full ${analysisResult.success ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-sm font-medium text-gray-600">
+                  {analysisResult.success ? 'Success' : 'Failed'}
+                </span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <span className="text-sm font-medium text-gray-600">Analysis Type</span>
+                <p className="text-lg font-semibold text-gray-800">{analysisResult.analysisType}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <span className="text-sm font-medium text-gray-600">Timestamp</span>
+                <p className="text-lg font-semibold text-gray-800">
+                  {new Date(analysisResult.timestamp || '').toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            {analysisResult.success && analysisResult.data && (
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6">
+                {formatAnalysisResult(analysisResult.data)}
+              </div>
+            )}
+            
+            {!analysisResult.success && analysisResult.error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+                <h4 className="text-lg font-bold text-red-800 mb-2">Error</h4>
+                <p className="text-red-700">{analysisResult.error}</p>
+              </div>
+            )}
           </div>
+        )}
 
-          {analysisResult.success && analysisResult.data && formatAnalysisResult(analysisResult.data)}
-          {!analysisResult.success && analysisResult.error && (
-            <div className="text-red-600">
-              <strong>Error:</strong> {analysisResult.error}
+        {/* Radar Charts for Cat Evaluation */}
+        {radarScores && (
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                {catJudgeMode ? '🏆 Cat Judge Mode - 5 Cute Cat Characteristics' : '🐱 Cat Photo Evaluation Radar Charts'}
+              </h3>
+              <p className="text-gray-600 text-lg">
+                {catJudgeMode 
+                  ? 'Professional MUI X radar chart showing your cat\'s scores on 5 cute cat characteristics'
+                  : 'Compare our custom radar chart (left) with the professional MUI X radar chart (right)'
+                }
+              </p>
             </div>
-          )}
-        </div>
-      )}
-
-      {/* Radar Charts for Cat Evaluation */}
-      {radarScores && (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-6">
-          <h3 className="font-semibold text-blue-800 mb-4 text-lg text-center">
-            {catJudgeMode ? '🏆 Cat Judge Mode - 5 Cute Cat Characteristics' : '🐱 Cat Photo Evaluation Radar Charts'}
-          </h3>
-          <p className="text-sm text-blue-700 text-center mb-6">
-            {catJudgeMode 
-              ? 'Professional MUI X radar chart showing your cat\'s scores on 5 cute cat characteristics'
-              : 'Compare our custom radar chart (left) with the professional MUI X radar chart (right)'
-            }
-          </p>
-          
-          {catJudgeMode ? (
-            /* Cat Judge Mode - Only MUI Chart */
-            <div className="flex justify-center">
-              <div className="text-center">
-                <h4 className="font-semibold text-gray-800 mb-4">Professional Cat Judge Radar Chart</h4>
-                <MUIRadarChart data={radarScores} size={400} catJudgeMode={catJudgeMode} />
-                <div className="mt-4 text-xs text-gray-600">
-                  <p>✅ Professional MUI X radar chart</p>
-                  <p>✅ 5 cute cat characteristics</p>
-                  <p>✅ Interactive tooltips</p>
+            
+            {catJudgeMode ? (
+              /* Cat Judge Mode - Only MUI Chart */
+              <div className="flex justify-center">
+                <div className="text-center">
+                  <h4 className="text-xl font-bold text-gray-800 mb-6">Professional Cat Judge Radar Chart</h4>
+                  <div className="bg-gray-50 rounded-2xl p-4">
+                    <MUIRadarChart data={radarScores} size={400} catJudgeMode={catJudgeMode} />
+                  </div>
+                  <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-600">
+                    <div className="flex items-center justify-center space-x-2">
+                      <span className="text-green-500">✅</span>
+                      <span>Professional MUI X radar chart</span>
+                    </div>
+                    <div className="flex items-center justify-center space-x-2">
+                      <span className="text-green-500">✅</span>
+                      <span>5 cute cat characteristics</span>
+                    </div>
+                    <div className="flex items-center justify-center space-x-2">
+                      <span className="text-green-500">✅</span>
+                      <span>Interactive tooltips</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            /* Default Mode - Both Charts */
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Custom Radar Chart */}
-              <div className="text-center">
-                <h4 className="font-semibold text-gray-800 mb-4">Custom SVG Radar Chart</h4>
-                <div className="flex justify-center">
-                  <RadarChart data={radarScores} size={350} />
+            ) : (
+              /* Default Mode - Both Charts */
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                {/* Custom Radar Chart */}
+                <div className="text-center">
+                  <h4 className="text-xl font-bold text-gray-800 mb-6">Custom SVG Radar Chart</h4>
+                  <div className="bg-gray-50 rounded-2xl p-4">
+                    <div className="flex justify-center">
+                      <RadarChart data={radarScores} size={350} />
+                    </div>
+                  </div>
+                  <div className="mt-6 grid grid-cols-1 gap-2 text-sm text-gray-600">
+                    <div className="flex items-center justify-center space-x-2">
+                      <span className="text-green-500">✅</span>
+                      <span>Custom built with SVG</span>
+                    </div>
+                    <div className="flex items-center justify-center space-x-2">
+                      <span className="text-green-500">✅</span>
+                      <span>Fighting game style</span>
+                    </div>
+                    <div className="flex items-center justify-center space-x-2">
+                      <span className="text-green-500">✅</span>
+                      <span>Lightweight & fast</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="mt-4 text-xs text-gray-600">
-                  <p>✅ Custom built with SVG</p>
-                  <p>✅ Fighting game style</p>
-                  <p>✅ Lightweight & fast</p>
-                </div>
-              </div>
 
-              {/* MUI Radar Chart */}
-              <div className="text-center">
-                <h4 className="font-semibold text-gray-800 mb-4">MUI X Radar Chart</h4>
-                <div className="flex justify-center">
-                  <MUIRadarChart data={radarScores} size={350} catJudgeMode={catJudgeMode} />
-                </div>
-                <div className="mt-4 text-xs text-gray-600">
-                  <p>✅ Professional library</p>
-                  <p>✅ Rich interactions</p>
-                  <p>✅ Built-in tooltips</p>
+                {/* MUI Radar Chart */}
+                <div className="text-center">
+                  <h4 className="text-xl font-bold text-gray-800 mb-6">MUI X Radar Chart</h4>
+                  <div className="bg-gray-50 rounded-2xl p-4">
+                    <div className="flex justify-center">
+                      <MUIRadarChart data={radarScores} size={350} catJudgeMode={catJudgeMode} />
+                    </div>
+                  </div>
+                  <div className="mt-6 grid grid-cols-1 gap-2 text-sm text-gray-600">
+                    <div className="flex items-center justify-center space-x-2">
+                      <span className="text-green-500">✅</span>
+                      <span>Professional library</span>
+                    </div>
+                    <div className="flex items-center justify-center space-x-2">
+                      <span className="text-green-500">✅</span>
+                      <span>Rich interactions</span>
+                    </div>
+                    <div className="flex items-center justify-center space-x-2">
+                      <span className="text-green-500">✅</span>
+                      <span>Built-in tooltips</span>
+                    </div>
+                  </div>
                 </div>
               </div>
+            )}
+            
+            <div className="mt-8 text-center">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6">
+                <p className="text-gray-700 text-lg">
+                  {catJudgeMode 
+                    ? 'The larger the area, the better your cat photo scores on all 5 cute cat characteristics!'
+                    : 'Both charts show how your cat photo scores across 5 key evaluation criteria. The larger the area, the better the overall cat photo quality!'
+                  }
+                </p>
+              </div>
             </div>
-          )}
-          
-          <div className="mt-6 text-center">
-            <p className="text-sm text-blue-700">
-              Both charts show how your cat photo scores across 5 key evaluation criteria.
-              The larger the area, the better the overall cat photo quality!
-            </p>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }
