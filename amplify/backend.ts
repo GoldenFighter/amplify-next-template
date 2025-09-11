@@ -3,7 +3,7 @@ import { auth } from './auth/resource.js';
 import { data } from './data/resource.js';
 import { storage } from './storage/resource.js';
 import { imageAnalysis } from './functions/imageAnalysis/resource.js';
-import { exifExtraction } from './functions/exifExtraction/resource';
+// import { exifExtraction } from './functions/exifExtraction/resource';
 // import { rekognitionAnalysis } from './functions/rekognitionAnalysis/resource.js';
 import { PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
 import { LambdaDestination } from 'aws-cdk-lib/aws-s3-notifications';
@@ -14,7 +14,7 @@ const backend = defineBackend({
   data,
   storage,
   imageAnalysis,
-  exifExtraction,
+  // exifExtraction,
   // rekognitionAnalysis,
 });
 
