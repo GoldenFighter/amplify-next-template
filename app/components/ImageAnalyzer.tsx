@@ -682,72 +682,89 @@ export default function ImageAnalyzer({
 
         {/* Upload Section */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="text-center">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileSelect}
-              className="hidden"
-              id="image-upload"
-            />
-            <label
-              htmlFor="image-upload"
-              className="cursor-pointer inline-flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gradient-to-br from-gray-50 to-gray-100 hover:from-blue-50 hover:to-indigo-100 hover:border-blue-400 transition-all duration-200"
-            >
-              <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                <svg
-                  className="w-12 h-12 mb-4 text-gray-500"
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 20 16"
-                >
-                  <path
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                  />
-                </svg>
-                <p className="mb-2 text-lg font-semibold text-gray-700">
-                  Click to upload a cat photo
-                </p>
-                <p className="text-sm text-gray-500">PNG, JPG, GIF or WEBP (MAX. 10MB)</p>
-              </div>
-            </label>
-          </div>
-
-          {imagePreview && (
-            <div className="mt-6">
-              <div className="relative bg-gray-100 rounded-xl p-4">
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="max-w-full h-64 md:h-80 object-contain mx-auto rounded-lg shadow-lg"
-                />
-              </div>
-            </div>
-          )}
-
-          {selectedFile && (
-            <div className="mt-6 text-center">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <p className="text-sm font-medium text-blue-800">
-                  Selected: {selectedFile.name}
-                </p>
-                <p className="text-xs text-blue-600">
-                  Size: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                </p>
-              </div>
-              <Button
-                onClick={handleAnalyze}
-                disabled={isUploading || isAnalyzing}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                variation="primary"
+          {!selectedFile ? (
+            /* Upload Area - Only show when no file selected */
+            <div className="text-center">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+                id="image-upload"
+              />
+              <label
+                htmlFor="image-upload"
+                className="cursor-pointer inline-flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gradient-to-br from-gray-50 to-gray-100 hover:from-blue-50 hover:to-indigo-100 hover:border-blue-400 transition-all duration-200"
               >
-                {isUploading ? 'Uploading...' : isAnalyzing ? 'Analyzing...' : 'Analyze Image'}
-              </Button>
+                <div className="flex flex-col items-center justify-center pt-4 pb-4">
+                  <svg
+                    className="w-8 h-8 mb-3 text-gray-500"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 20 16"
+                  >
+                    <path
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                    />
+                  </svg>
+                  <p className="mb-1 text-base font-semibold text-gray-700">
+                    Click to upload a cat photo
+                  </p>
+                  <p className="text-sm text-gray-500">PNG, JPG, GIF or WEBP (MAX. 10MB)</p>
+                </div>
+              </label>
+            </div>
+          ) : (
+            /* File Selected - Show preview and controls */
+            <div className="space-y-4">
+              {/* Image Preview */}
+              {imagePreview && (
+                <div className="relative bg-gray-100 rounded-xl p-4">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="max-w-full h-64 md:h-80 object-contain mx-auto rounded-lg shadow-lg"
+                  />
+                </div>
+              )}
+
+              {/* File Info and Controls */}
+              <div className="text-center space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm font-medium text-blue-800">
+                    Selected: {selectedFile.name}
+                  </p>
+                  <p className="text-xs text-blue-600">
+                    Size: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button
+                    onClick={handleAnalyze}
+                    disabled={isUploading || isAnalyzing}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    variation="primary"
+                  >
+                    {isUploading ? 'Uploading...' : isAnalyzing ? 'Analyzing...' : 'Analyze Image'}
+                  </Button>
+                  
+                  <button
+                    onClick={() => {
+                      setSelectedFile(null);
+                      setImagePreview(null);
+                    }}
+                    className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    Choose Different Image
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
