@@ -1,6 +1,6 @@
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { S3Event, S3EventRecord } from 'aws-lambda';
-import * as ExifReader from 'exif-reader';
+const ExifReader = require('exif-reader');
 
 const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
 
