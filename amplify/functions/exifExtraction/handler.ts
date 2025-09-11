@@ -1,6 +1,6 @@
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { S3Event, S3EventRecord } from 'aws-lambda';
-const ExifReader = require('exif-reader');
+import * as ExifReader from 'exif-reader';
 
 const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
 
@@ -77,7 +77,7 @@ async function extractEXIFData(imageData: Uint8Array): Promise<any> {
 
   try {
     // Use exif-reader library for comprehensive EXIF extraction
-    const tags = ExifReader(buffer);
+    const tags = (ExifReader as any)(buffer);
     
     if (tags && Object.keys(tags).length > 0) {
       exifData.hasExif = true;
