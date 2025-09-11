@@ -1,0 +1,14 @@
+{
+  "files.exclude": {
+    "amplify/**/*.js": true,
+    "amplify/**/*.js.map": true
+  },
+  "search.exclude": {
+    "amplify/**/*.js": true,
+    "amplify/**/*.js.map": true
+  },
+  "files.watcherExclude": {
+    "amplify/**/*.js": true,
+    "amplify/**/*.js.map": true
+  }
+}

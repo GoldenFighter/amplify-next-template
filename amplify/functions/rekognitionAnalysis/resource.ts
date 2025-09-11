@@ -1,7 +1,7 @@
 import { defineFunction } from '@aws-amplify/backend';
 
 export const rekognitionAnalysis = defineFunction({
-  name: 'rekognitionAnalysis',
+  name: 'rekognitionAnalysisShowCase',
   entry: './handler.ts',
   runtime: 20, // Node.js 20
   timeoutSeconds: 60, // 1 minute timeout

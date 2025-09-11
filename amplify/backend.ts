@@ -4,7 +4,7 @@ import { data } from './data/resource.js';
 import { storage } from './storage/resource.js';
 import { imageAnalysis } from './functions/imageAnalysis/resource.js';
 // import { exifExtraction } from './functions/exifExtraction/resource';
-// import { rekognitionAnalysis } from './functions/rekognitionAnalysis/resource.js';
+import { rekognitionAnalysisShowCase } from './functions/rekognitionAnalysis/resource';
 import { PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
 import { LambdaDestination } from 'aws-cdk-lib/aws-s3-notifications';
 import { EventType } from 'aws-cdk-lib/aws-s3';
@@ -15,7 +15,7 @@ const backend = defineBackend({
   storage,
   imageAnalysis,
   // exifExtraction,
-  // rekognitionAnalysis,
+  rekognitionAnalysisShowCase,
 });
 
 // Grant the function access to Bedrock
