@@ -1,6 +1,6 @@
 import { defineFunction } from '@aws-amplify/backend';
 
-export const rekognitionAnalysis = defineFunction({
+export const rekognitionAnalysisShowCase = defineFunction({
   name: 'rekognitionAnalysisShowCase',
   entry: './handler.ts',
   runtime: 20, // Node.js 20
