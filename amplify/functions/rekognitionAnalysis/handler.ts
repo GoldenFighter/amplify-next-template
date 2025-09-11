@@ -91,14 +91,14 @@ async function detectLabels(bucketName: string, objectKey: string) {
   const response = await rekognitionClient.send(command);
   
   return {
-    labels: response.Labels?.map(label => ({
+    labels: response.Labels?.map((label: any) => ({
       name: label.Name,
       confidence: label.Confidence,
-      instances: label.Instances?.map(instance => ({
+      instances: label.Instances?.map((instance: any) => ({
         confidence: instance.Confidence,
         boundingBox: instance.BoundingBox,
       })),
-      parents: label.Parents?.map(parent => ({
+      parents: label.Parents?.map((parent: any) => ({
         name: parent.Name,
       })),
     })) || [],
@@ -120,7 +120,7 @@ async function detectFaces(bucketName: string, objectKey: string) {
   
   return {
     faceCount: response.FaceDetails?.length || 0,
-    faces: response.FaceDetails?.map(face => ({
+    faces: response.FaceDetails?.map((face: any) => ({
       confidence: face.Confidence,
       boundingBox: face.BoundingBox,
       ageRange: face.AgeRange ? {
@@ -131,7 +131,7 @@ async function detectFaces(bucketName: string, objectKey: string) {
         value: face.Smile.Value,
         confidence: face.Smile.Confidence,
       } : null,
-      emotions: face.Emotions?.map(emotion => ({
+      emotions: face.Emotions?.map((emotion: any) => ({
         type: emotion.Type,
         confidence: emotion.Confidence,
       })) || [],
@@ -172,12 +172,12 @@ async function detectText(bucketName: string, objectKey: string) {
   const response = await rekognitionClient.send(command);
   
   return {
-    textDetections: response.TextDetections?.map(text => ({
+    textDetections: response.TextDetections?.map((text: any) => ({
       detectedText: text.DetectedText,
       confidence: text.Confidence,
       type: text.Type,
       boundingBox: text.Geometry?.BoundingBox,
-      polygon: text.Geometry?.Polygon?.map(point => ({
+      polygon: text.Geometry?.Polygon?.map((point: any) => ({
         x: point.X,
         y: point.Y,
       })) || [],

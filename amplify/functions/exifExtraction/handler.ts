@@ -1,6 +1,6 @@
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { S3Event, S3EventRecord } from 'aws-lambda';
-import ExifReader from 'exif-reader';
+import * as ExifReader from 'exif-reader';
 
 const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
 
@@ -77,60 +77,60 @@ async function extractEXIFData(imageData: Uint8Array): Promise<any> {
 
   try {
     // Use exif-reader library for comprehensive EXIF extraction
-    const tags = ExifReader.load(buffer);
+    const tags = ExifReader(buffer);
     
     if (tags && Object.keys(tags).length > 0) {
       exifData.hasExif = true;
       
-      // Extract comprehensive EXIF data
+      // Extract EXIF data with simplified approach
       exifData.exif = {
-        // Image dimensions
-        imageWidth: tags.image?.width?.value || tags['Image Width']?.value,
-        imageHeight: tags.image?.height || tags['Image Height']?.value,
+        // Basic image info
+        imageWidth: (tags as any).Image?.width || (tags as any)['Image Width'],
+        imageHeight: (tags as any).Image?.height || (tags as any)['Image Height'],
         
         // Camera information
-        make: tags.image?.make?.value || tags['Make']?.value,
-        model: tags.image?.model?.value || tags['Model']?.value,
-        software: tags.image?.software?.value || tags['Software']?.value,
+        make: (tags as any).Image?.make || (tags as any)['Make'],
+        model: (tags as any).Image?.model || (tags as any)['Model'],
+        software: (tags as any).Image?.software || (tags as any)['Software'],
         
         // Date and time
-        dateTime: tags.image?.datetime?.value || tags['DateTime']?.value,
-        dateTimeOriginal: tags.exif?.datetimeoriginal?.value || tags['DateTimeOriginal']?.value,
-        dateTimeDigitized: tags.exif?.datetimedigitized?.value || tags['DateTimeDigitized']?.value,
+        dateTime: (tags as any).Image?.datetime || (tags as any)['DateTime'],
+        dateTimeOriginal: (tags as any).Exif?.datetimeoriginal || (tags as any)['DateTimeOriginal'],
+        dateTimeDigitized: (tags as any).Exif?.datetimedigitized || (tags as any)['DateTimeDigitized'],
         
         // Camera settings
-        fNumber: tags.exif?.fnumber?.value || tags['FNumber']?.value,
-        exposureTime: tags.exif?.exposuretime?.value || tags['ExposureTime']?.value,
-        iso: tags.exif?.iso?.value || tags['ISO']?.value,
-        focalLength: tags.exif?.focallength?.value || tags['FocalLength']?.value,
-        flash: tags.exif?.flash?.value || tags['Flash']?.value,
-        whiteBalance: tags.exif?.whitebalance?.value || tags['WhiteBalance']?.value,
+        fNumber: (tags as any).Exif?.fnumber || (tags as any)['FNumber'],
+        exposureTime: (tags as any).Exif?.exposuretime || (tags as any)['ExposureTime'],
+        iso: (tags as any).Exif?.iso || (tags as any)['ISO'],
+        focalLength: (tags as any).Exif?.focallength || (tags as any)['FocalLength'],
+        flash: (tags as any).Exif?.flash || (tags as any)['Flash'],
+        whiteBalance: (tags as any).Exif?.whitebalance || (tags as any)['WhiteBalance'],
         
         // GPS information
         gps: {
-          latitude: tags.gps?.latitude?.value || tags['GPS Latitude']?.value,
-          longitude: tags.gps?.longitude?.value || tags['GPS Longitude']?.value,
-          altitude: tags.gps?.altitude?.value || tags['GPS Altitude']?.value,
-          latitudeRef: tags.gps?.latituderef?.value || tags['GPS LatitudeRef']?.value,
-          longitudeRef: tags.gps?.longituderef?.value || tags['GPS LongitudeRef']?.value,
-          altitudeRef: tags.gps?.altituderef?.value || tags['GPS AltitudeRef']?.value,
+          latitude: (tags as any).GPS?.latitude || (tags as any)['GPS Latitude'],
+          longitude: (tags as any).GPS?.longitude || (tags as any)['GPS Longitude'],
+          altitude: (tags as any).GPS?.altitude || (tags as any)['GPS Altitude'],
+          latitudeRef: (tags as any).GPS?.latituderef || (tags as any)['GPS LatitudeRef'],
+          longitudeRef: (tags as any).GPS?.longituderef || (tags as any)['GPS LongitudeRef'],
+          altitudeRef: (tags as any).GPS?.altituderef || (tags as any)['GPS AltitudeRef'],
         },
         
         // Orientation
-        orientation: tags.image?.orientation?.value || tags['Orientation']?.value,
+        orientation: (tags as any).Image?.orientation || (tags as any)['Orientation'],
         
         // Color space
-        colorSpace: tags.image?.colorspace?.value || tags['ColorSpace']?.value,
+        colorSpace: (tags as any).Image?.colorspace || (tags as any)['ColorSpace'],
         
         // Resolution
-        xResolution: tags.image?.xresolution?.value || tags['X Resolution']?.value,
-        yResolution: tags.image?.yresolution?.value || tags['Y Resolution']?.value,
-        resolutionUnit: tags.image?.resolutionunit?.value || tags['Resolution Unit']?.value,
+        xResolution: (tags as any).Image?.xresolution || (tags as any)['X Resolution'],
+        yResolution: (tags as any).Image?.yresolution || (tags as any)['Y Resolution'],
+        resolutionUnit: (tags as any).Image?.resolutionunit || (tags as any)['Resolution Unit'],
         
         // Other metadata
-        artist: tags.image?.artist?.value || tags['Artist']?.value,
-        copyright: tags.image?.copyright?.value || tags['Copyright']?.value,
-        imageDescription: tags.image?.imagedescription?.value || tags['Image Description']?.value,
+        artist: (tags as any).Image?.artist || (tags as any)['Artist'],
+        copyright: (tags as any).Image?.copyright || (tags as any)['Copyright'],
+        imageDescription: (tags as any).Image?.imagedescription || (tags as any)['Image Description'],
       };
 
       // Clean up undefined values
